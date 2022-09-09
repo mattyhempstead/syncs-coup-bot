@@ -6,7 +6,18 @@ from coup.bots.action import Action
 from typing import Dict, List, Optional
 
 
+
+class Player:
+    def __init__(self, player_id, balance, card_num):
+        self.player_id:int = player_id
+        self.balance:int = balance
+        self.card_num:int = card_num
+
+
+
 class GameInfo:
+    PLAYER_NUM = 5
+
     def __init__(self, dict) -> None:
         # The move currently requested from you.
         self.requested_move: RequestedMove = RequestedMove(int(dict['requested_move']))
@@ -39,4 +50,31 @@ class GameInfo:
 
         # An integer representing the player who played/is playing the current
         # primary action. Note: this can be you. 
-        self.current_primary_player: int = int(dict['current_primary_player'])
+        self.current_primary_player_id: int = int(dict['current_primary_player'])
+
+
+        self.players = []
+        for i in range(GameInfo.PLAYER_NUM):
+            p = Player(
+                player_id=self.player_id,
+                balance=self.balances[self.player_id],
+                card_num=self.players_cards_num[self.player_id]
+            )
+            self.players.append(p)
+
+
+
+        self.current_player = self.players[self.player_id]
+        self.current_primary_player = self.players[self.current_primary_player_id]
+
+
+
+    def get_next_alive_player(self) -> int:
+        next_alive = (self.player_id + 1) % 5
+        while self.players_cards_num[next_alive] == 0:
+            next_alive = (next_alive + 1) % 5
+
+        return next_alive
+
+
+

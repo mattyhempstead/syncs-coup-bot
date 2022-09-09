@@ -16,21 +16,18 @@ class BaseBot:
         if not local_mode:
             self.bot_battle = BotBattle()
 
-    def get_next_alive_player(self) -> int:
-        next_alive = (self.game_info.player_id + 1) % 5
-        while self.game_info.players_cards_num[next_alive] == 0:
-            next_alive = (next_alive + 1) % 5
+    def __str__(self) -> str:
+        return self.__class__.__name__
 
-        return next_alive
 
     def primary_action_handler(self) -> tuple[PrimaryAction, Optional[int]]:
-        if self.game_info.balances[self.game_info.player_id] >= 7:
-            target_player_id = self.get_next_alive_player()
+        if self.game_info.current_player.balance >= 7:
+            target_player_id = self.game_info.get_next_alive_player()
             return (PrimaryAction.Coup, target_player_id)
         elif Character.Duke in self.game_info.own_cards:
             return (PrimaryAction.Tax, None)
-        elif Character.Assassin in self.game_info.own_cards and self.game_info.balances[self.game_info.player_id] >= 3:
-            target_player_id = self.get_next_alive_player()
+        elif Character.Assassin in self.game_info.own_cards and self.game_info.current_player.balance >= 3:
+            target_player_id = self.game_info.get_next_alive_player()
             return (PrimaryAction.Assassinate, target_player_id)
         else:
             return (PrimaryAction.Income, None)
@@ -48,6 +45,8 @@ class BaseBot:
         return 0
 
     def run(self) -> None:
+        print("Bot:", str(self), flush=True)
+
         while True:
             self.game_info = self.bot_battle.get_game_info()
             requested_move = self.game_info.requested_move
