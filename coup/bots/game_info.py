@@ -8,10 +8,20 @@ from typing import Dict, List, Optional
 
 
 class Player:
-    def __init__(self, player_id, balance, card_num):
+    def __init__(self, player_id, balance, card_num, current):
         self.player_id:int = player_id
         self.balance:int = balance
         self.card_num:int = card_num
+
+        self.is_current:bool = is_current
+
+    @property
+    def alive(self) -> bool:
+        return self.card_num > 0
+
+    @property
+    def dead(self) -> bool:
+        return self.card_num == 0
 
 
 
@@ -56,9 +66,10 @@ class GameInfo:
         self.players = []
         for i in range(GameInfo.PLAYER_NUM):
             p = Player(
-                player_id=self.player_id,
-                balance=self.balances[self.player_id],
-                card_num=self.players_cards_num[self.player_id]
+                player_id = self.player_id,
+                balance = self.balances[self.player_id],
+                card_num = self.players_cards_num[self.player_id],
+                current = (i==self.player_id),
             )
             self.players.append(p)
 
@@ -69,12 +80,25 @@ class GameInfo:
 
 
 
-    def get_next_alive_player(self) -> int:
+    def get_next_alive_player(self) -> Player:
         next_alive = (self.player_id + 1) % 5
         while self.players_cards_num[next_alive] == 0:
             next_alive = (next_alive + 1) % 5
 
-        return next_alive
+        return self.players[next_alive]
 
 
+    def get_richest_player(self) -> Player:
+        """ 
+        Returns the richest alive player (not including current / self player).
+        If multiple richest will return the first in turn order.
+        """
+        richest_p = None
+        for p in self.players:
+            if p.is_current or p.dead:
+                continue
 
+            if richest_p is None or p.balance > richest_p.balance:
+                richest_p = p
+
+        return richest_p
