@@ -1,4 +1,4 @@
-import some_bot
+import ..bots.
 
 
 def main() -> None:

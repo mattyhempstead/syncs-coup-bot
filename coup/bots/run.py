@@ -1,5 +1,5 @@
-from bots.base_bot import BaseBot
-from bots.other_bot import OtherBot
+from coup.bots.base_bot import BaseBot
+from coup.bots.other_bot import OtherBot
 
 """END LOCAL IMPORTS"""
 

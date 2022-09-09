@@ -1,5 +1,5 @@
-from bots.enums import *
-from bots.base_bot import BaseBot
+from coup.bots.enums import *
+from coup.bots.base_bot import BaseBot
 
 """END LOCAL IMPORTS"""
 

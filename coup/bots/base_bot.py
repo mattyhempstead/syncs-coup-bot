@@ -1,6 +1,6 @@
-from bots.bot_battle import BotBattle
-from bots.game_info import GameInfo
-from bots.enums import *
+from coup.bots.bot_battle import BotBattle
+from coup.bots.game_info import GameInfo
+from coup.bots.enums import *
 
 """END LOCAL IMPORTS"""
 
