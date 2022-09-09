@@ -147,6 +147,14 @@ class GameInfo:
         action:Action = self.history[-1][ActionType.PrimaryAction]
         return action
 
+    def get_history_counter_action(self):
+        """ Returns the Action object from history of the CounterAction assuming one exists """
+        if ActionType.CounterAction not in self.history[-1]:
+            raise Exception("History contains no CounterAction")
+
+        action:Action = self.history[-1][ActionType.CounterAction]
+        return action
+
 
     def exists_historical_counter(self, counter_action_type:CounterAction) -> bool:
         """
@@ -174,3 +182,13 @@ class GameInfo:
         
         return False
 
+
+    def get_character_location(self, character:Character) -> int:
+        """ Returns location of a given owned character. """
+        if character not in self.own_cards:
+            raise Exception("Character is not owned by us")
+        
+        if len(self.own_cards) == 2 and self.own_cards[1] == character:
+            return 1
+        else:
+            return 0
