@@ -121,10 +121,28 @@ class GameInfo:
         """
         richest_p = None
         for p in self.players:
-            if p.is_current or p.dead:
-                continue
-
+            if p.is_current or p.dead: continue
             if richest_p is None or p.balance > richest_p.balance:
                 richest_p = p
-
         return richest_p
+
+    def get_most_cards(self) -> int:
+        """ Returns the number of cards owned by the best non-self player """
+        return max([p.card_num for p in self.players if not p.is_current])
+
+    def get_winning_player(self) -> Player:
+        """ 
+        Returns the first (non-self) player ordered by card number desc then coins desc.
+        """
+        most_cards = self.get_most_cards()
+        players = [p for p in self.players if not p.is_current and p.card_num == most_cards]
+        players.sort(key=lambda p: p.balance, reverse=True)
+        return players[0]
+
+    def get_history_primary_action(self):
+        """ Returns the Action object from history of the PrimaryAction assuming one exists """
+        if ActionType.PrimaryAction not in self.history[-1]:
+            raise Exception("History contains no PrimaryAction (we must presumably be in a PrimaryMove state?)")
+
+        action:Action = self.history[-1][ActionType.PrimaryAction]
+        return action

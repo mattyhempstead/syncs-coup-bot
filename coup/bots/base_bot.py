@@ -46,11 +46,24 @@ class BaseBot:
 
     def run(self) -> None:
         print("Bot:", str(self), flush=True)
-        print("Own Cards:", self.game_info.own_cards, flush=True)
 
         while True:
             self.game_info = self.bot_battle.get_game_info()
             requested_move = self.game_info.requested_move
+
+            print("current_player_id:", self.game_info.player_id, flush=True)
+            print("Own Cards:", self.game_info.own_cards, flush=True)
+            print("balances", self.game_info.balances, flush=True)
+            print("card_nums", self.game_info.players_cards_num, flush=True)
+            print("next_alive_player_id:", self.game_info.get_next_alive_player().player_id, flush=True)
+            print("next_richest_player_id:", self.game_info.get_richest_player().player_id, flush=True)
+            print("most_cards:", self.game_info.get_most_cards(), flush=True)
+            print("winning_player:", self.game_info.get_winning_player().player_id, flush=True)
+
+            if len(self.game_info.history) > 0:
+                print("history[-1]:", self.game_info.history[-1], flush=True)
+                if ActionType.PrimaryAction in self.game_info.history[-1]:
+                    print(self.game_info.history[-1][ActionType.PrimaryAction].__dict__)
 
             if requested_move == RequestedMove.PrimaryAction:
                 primary_action, target = self.primary_action_handler()
