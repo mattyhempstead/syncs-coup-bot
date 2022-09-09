@@ -1,4 +1,4 @@
-from base_bot.enums import *
+from bots.enums import *
 
 """END LOCAL IMPORTS"""
 

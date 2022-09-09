@@ -1,6 +1,6 @@
-from base_bot.bot_battle import BotBattle
-from base_bot.game_info import GameInfo
-from base_bot.enums import *
+from bots.bot_battle import BotBattle
+from bots.game_info import GameInfo
+from bots.enums import *
 
 """END LOCAL IMPORTS"""
 
@@ -75,7 +75,3 @@ class BaseBot:
             else:
                 raise Exception(f'Unknown requested move: {requested_move}')
 
-
-if __name__ == "__main__":
-    bot = BaseBot()
-    bot.run()

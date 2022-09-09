@@ -1,5 +1,5 @@
-from base_bot.enums import ChallengeAction, PrimaryAction, CounterAction
-from base_bot.game_info import GameInfo
+from bots.enums import ChallengeAction, PrimaryAction, CounterAction
+from bots.game_info import GameInfo
 
 """END LOCAL IMPORTS"""
 

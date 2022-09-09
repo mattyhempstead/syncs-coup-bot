@@ -1,5 +1,5 @@
-from base_bot.enums import *
-from base_bot.action import Action
+from bots.enums import *
+from bots.action import Action
 
 """END LOCAL IMPORTS"""
 
