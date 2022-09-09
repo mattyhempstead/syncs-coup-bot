@@ -9,7 +9,7 @@ from typing import Optional
 class OtherBot(BaseBot):
     def primary_action_handler(self) -> tuple[PrimaryAction, Optional[int]]:
         if self.game_info.current_player.balance >= 7:
-            target_player = self.game_info.get_next_alive_player()
+            target_player = self.game_info.get_winning_player()
             return (PrimaryAction.Coup, target_player.player_id)
         elif Character.Duke in self.game_info.own_cards:
             return (PrimaryAction.Tax, None)
@@ -21,7 +21,13 @@ class OtherBot(BaseBot):
             print("Stealing from", target_player.player_id, flush=True)
             return (PrimaryAction.Steal, target_player.player_id)
         else:
-            return (PrimaryAction.Income, None)
+            # Get $2 from Foreign Aid if nobody has historically countered it
+            if not self.game_info.exists_historical_counter(CounterAction.BlockForeignAid):
+                return (PrimaryAction.ForeignAid, None)
+
+            # Otherwise get $1 from Income by default
+            else:
+                return (PrimaryAction.Income, None)
 
     def counter_action_handler(self) -> CounterAction:
         action = self.game_info.get_history_primary_action()
@@ -52,7 +58,11 @@ class OtherBot(BaseBot):
         return ChallengeAction.NoChallenge
 
     def challenge_response_handler(self) -> int:
-        """ Which card number we reveal if we are challenged (for a primary or a counter) """
+        """
+            Which card number we reveal if we are challenged (for a primary or a counter).
+
+            If we are honest, we usually want to reveal the correct card unless we are mega-braining.
+        """
         return 0
 
     def discard_choice_handler(self) -> int:

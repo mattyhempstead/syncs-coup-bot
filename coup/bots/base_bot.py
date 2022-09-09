@@ -60,10 +60,21 @@ class BaseBot:
             print("most_cards:", self.game_info.get_most_cards(), flush=True)
             print("winning_player:", self.game_info.get_winning_player().player_id, flush=True)
 
-            if len(self.game_info.history) > 0:
-                print("history[-1]:", self.game_info.history[-1], flush=True)
-                if ActionType.PrimaryAction in self.game_info.history[-1]:
-                    print(self.game_info.history[-1][ActionType.PrimaryAction].__dict__)
+
+            print("Existing foreign block:", self.game_info.exists_historical_counter(CounterAction.BlockForeignAid), flush=True)
+
+            for i,h in enumerate(self.game_info.history):
+                if i >= len(self.game_info.history) - 2:
+                    print("History", i, h)
+
+            # if len(self.game_info.history) > 1:
+            #     print("history[-1]:", self.game_info.history[-2], flush=True)
+
+            # if len(self.game_info.history) > 0:
+            #     print("history[-1]:", self.game_info.history[-1], flush=True)
+                # print("history[-1]:", self.game_info.history[-1], flush=True)
+                # if ActionType.PrimaryAction in self.game_info.history[-1]:
+                #     print(self.game_info.history[-1][ActionType.PrimaryAction].__dict__)
 
             if requested_move == RequestedMove.PrimaryAction:
                 primary_action, target = self.primary_action_handler()

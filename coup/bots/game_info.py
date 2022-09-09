@@ -146,3 +146,31 @@ class GameInfo:
 
         action:Action = self.history[-1][ActionType.PrimaryAction]
         return action
+
+
+    def exists_historical_counter(self, counter_action_type:CounterAction) -> bool:
+        """
+            Returns whether a specific CounterAction type has been successfully applied in the past.
+            (Not including counters that we applied).
+
+            Useful if we want to check, for example, whether any other player is willing to block ForeignAid.
+        """
+        for h in self.history[:-1]:
+            # Skip if no counteraction
+            if ActionType.CounterAction not in h: continue 
+
+            counter_action = h[ActionType.CounterAction]
+
+            # Skip it wrong type
+            if counter_action.action != counter_action_type: continue 
+
+            # Skip if not successful
+            if counter_action.successful == False: continue
+
+            # Skip if it was us
+            if counter_action.player == self.player_id: continue
+
+            return True
+        
+        return False
+
