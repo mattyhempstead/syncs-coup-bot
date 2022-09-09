@@ -1,11 +1,11 @@
 FILE_NAMES = [
-    'bots/action.py',
-    'bots/enums.py',
-    'bots/game_info.py',
-    'bots/bot_battle.py',
-    'bots/base_bot.py',
-    'bots/other_bot.py',
-    'bots/run.py',
+    'coup/bots/action.py',
+    'coup/bots/enums.py',
+    'coup/bots/game_info.py',
+    'coup/bots/bot_battle.py',
+    'coup/bots/base_bot.py',
+    'coup/bots/other_bot.py',
+    'coup/bots/run.py',
 ]
 OUTPUT = 'submission.py'
 DELIMITER = '"""END LOCAL IMPORTS"""'
