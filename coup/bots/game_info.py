@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 
 class Player:
-    def __init__(self, player_id, balance, card_num, current):
+    def __init__(self, player_id, balance, card_num, is_current):
         self.player_id:int = player_id
         self.balance:int = balance
         self.card_num:int = card_num
@@ -50,15 +50,16 @@ class GameInfo:
         self.players = []
         for i in range(GameInfo.PLAYER_NUM):
             p = Player(
-                player_id = self.player_id,
-                balance = self.balances[self.player_id],
-                card_num = self.players_cards_num[self.player_id],
-                current = (i==self.player_id),
+                player_id = i,
+                balance = self.balances[i],
+                card_num = self.players_cards_num[i],
+                is_current = (i==self.player_id),
             )
             self.players.append(p)
 
         self.current_player = self.players[self.player_id]
         self.current_primary_player = self.players[self.current_primary_player_id]
+
 
     @staticmethod
     def from_dictionary(dict) -> 'GameInfo':
