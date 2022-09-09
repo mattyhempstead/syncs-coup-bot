@@ -10,12 +10,15 @@ from dataclasses import dataclass
 class Action:
     action_type: ActionType
     action: ActionEnum
-    player: int
-    target: Optional[int]
-    successful: bool
+    player_id: int
+    successful: Optional[bool]
+    target: Optional[int] = None
 
     @staticmethod
-    def from_dictionary(dict: dict[str, str]) -> 'Action':
+    def from_dictionary(dict) -> 'Action':
+        # TODO: Make type safe.
+        # TODO: Work out if the type casts can be removed?
+        
         # The ActionType of the action.
         action_type: ActionType = ActionType(int(dict['action_type']))
 
@@ -28,7 +31,7 @@ class Action:
             action = ChallengeAction(int(dict['action']))
 
         # The player that made the action.
-        player: int = int(dict['player'])
+        player_id: int = int(dict['player'])
 
         # The targeted player of the action if it exists.
         target: Optional[int] = None
@@ -37,12 +40,12 @@ class Action:
 
         # Says whether the move successfully happened or was challenged and
         # failed.
-        successful: bool = bool(dict['successful'])
+        successful = dict['successful']
 
         return Action(
             action_type=action_type,
             action=action,
-            player=player,
+            player_id=player_id,
+            successful=successful,
             target=target,
-            successful=successful
         )
