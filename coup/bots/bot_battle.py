@@ -14,7 +14,7 @@ class BotBattle:
 
     def get_game_info(self) -> GameInfo:
         dict_game_info = self._read_from_pipe()
-        return GameInfo(dict_game_info)
+        return GameInfo.from_dictionary(dict_game_info)
 
     def play_primary_action(self, primary_action: PrimaryAction, target_player_id: Optional[int] = None):
         dict_move = {

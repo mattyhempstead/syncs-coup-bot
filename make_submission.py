@@ -1,6 +1,6 @@
 FILE_NAMES = [
-    'coup/bots/action.py',
     'coup/bots/enums.py',
+    'coup/bots/action.py',
     'coup/bots/game_info.py',
     'coup/bots/bot_battle.py',
     'coup/bots/base_bot.py',

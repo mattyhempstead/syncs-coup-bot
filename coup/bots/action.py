@@ -3,30 +3,46 @@ from coup.bots.enums import *
 """END LOCAL IMPORTS"""
 
 from typing import Optional
+from dataclasses import dataclass
 
 
+@dataclass
 class Action:
-    def __init__(self, dict: dict[str, str]) -> None:
+    action_type: ActionType
+    action: ActionEnum
+    player: int
+    target: Optional[int]
+    successful: bool
+
+    @staticmethod
+    def from_dictionary(dict: dict[str, str]) -> 'Action':
         # The ActionType of the action.
-        self.action_type: ActionType = ActionType(int(dict['action_type']))
+        action_type: ActionType = ActionType(int(dict['action_type']))
 
         # The Action of the action.
-        if self.action_type == ActionType.PrimaryAction:
-            self.action: ActionEnum = PrimaryAction(int(dict['action']))
-        elif self.action_type == ActionType.CounterAction:
-            self.action = CounterAction(int(dict['action']))
+        if action_type == ActionType.PrimaryAction:
+            action: ActionEnum = PrimaryAction(int(dict['action']))
+        elif action_type == ActionType.CounterAction:
+            action = CounterAction(int(dict['action']))
         else:
-            self.action = ChallengeAction(int(dict['action']))
+            action = ChallengeAction(int(dict['action']))
 
         # The player that made the action.
-        self.player: int = int(dict['player'])
+        player: int = int(dict['player'])
 
         # The targeted player of the action if it exists.
-        self.target: Optional[int] = None
+        target: Optional[int] = None
         if dict['target'] is not None:
-            self.target = int(dict['target'])
+            target = int(dict['target'])
 
         # Says whether the move successfully happened or was challenged and
         # failed.
-        self.successful: bool = bool(dict['successful'])
-        
+        successful: bool = bool(dict['successful'])
+
+        return Action(
+            action_type=action_type,
+            action=action,
+            player=player,
+            target=target,
+            successful=successful
+        )
