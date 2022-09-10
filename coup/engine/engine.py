@@ -703,8 +703,9 @@ class Engine:
             if self.players[target].balance == 0:
                 raise Exception(f'Target for Steal must not have 0 balance.')
 
-            self.players[target].balance -= min(self.players[target].balance, 2)
-            primary_player.balance += 2
+            steal_amount = min(self.players[target].balance, 2)
+            self.players[target].balance -= steal_amount
+            primary_player.balance += steal_amount
 
         else:
             raise ValueError(f'Unknown PrimaryAction {primary_action}')
