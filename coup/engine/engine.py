@@ -700,7 +700,10 @@ class Engine:
             if target is None:
                 raise ValueError(f'Steal requires a target.')
 
-            self.players[target].balance -= 2
+            if self.players[target].balance == 0:
+                raise Exception(f'Target for Steal must not have 0 balance.')
+
+            self.players[target].balance -= min(self.players[target].balance, 2)
             primary_player.balance += 2
 
         else:
