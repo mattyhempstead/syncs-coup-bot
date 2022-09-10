@@ -78,9 +78,17 @@ class Engine:
         turn = 0
         primary_player_id = 0
         while True:
-            self.run_turn_without_primary_resolution(primary_player_id)
+            primary_action_details = self.run_turn_without_primary_resolution(
+                primary_player_id
+            )
 
-            # TODO: Resolve primary action.
+            if primary_action_details is not None:
+                primary_action, target = primary_action_details
+                self.resolve_successful_primary_action(
+                    primary_player_id=primary_player_id,
+                    primary_action=primary_action,
+                    target=target
+                )
 
             turn += 1
             primary_player_id = self.next_player(primary_player_id)
@@ -88,7 +96,7 @@ class Engine:
     def run_turn_without_primary_resolution(
         self,
         primary_player_id: int
-    ) -> None:
+    ) -> Optional[tuple[PrimaryAction, Optional[int]]]:
         """
         Runs a turn, but doesn't actually apply the primary action or eliminate
         players that are reduced to zero influence (hand size). Any resolution
@@ -99,6 +107,9 @@ class Engine:
 
         This history, including the success state of all actions, will be
         updated to their final values by this method.
+
+        Returns the PrimaryAction and its target if one was executed
+        successfully, otherwise returns None, for ease of resolving it.
         """
 
         self.history.append({})
@@ -111,14 +122,13 @@ class Engine:
             # Only allow a challenge if the primary action taken corresponds to
             # a card.
             primary_challenger_id = self.run_challenge(
-                target=target,
+                challenged_player_id=primary_player_id,
                 primary_player_id=primary_player_id,
                 action_type=ActionType.ChallengePrimaryAction,
             )
 
+        # If someone challenged, we run a challenge response.
         if primary_challenger_id is not None:
-            # If someone challenged, we run a challenge response.
-    
             if self.run_challenge_response(
                 challenged_player_id=primary_player_id,
                 challenging_player_id=primary_challenger_id,
@@ -126,33 +136,86 @@ class Engine:
                 action_type=ActionType.ChallengePrimaryAction,
             ):
                 # If the challenge is successful, the primary action fails and
-                # the turn is over.
+                # we are done.
 
                 turn[ActionType.PrimaryAction].successful = False
                 turn[ActionType.ChallengePrimaryAction].successful = True
-                return
-            
+
+                return None
+
             # Otherwise, the challenge fails, and the turn continues.
             turn[ActionType.ChallengePrimaryAction].successful = False
 
+        # The PrimaryAction has now survived any challenges.
+
         if len(PRIMARY_ACTION_TO_COUNTER_ACTIONS[primary_action]) == 0:
             # There are no possible counter actions, so the primary action goes
-            # ahead and the turn is done.
+            # ahead and we are done.
 
             turn[ActionType.PrimaryAction].successful = True
-            return
-        
+
+            return primary_action, target
+
         # Otherwise, we still need to run the counter action and any challenges
         # to the counter action.
 
-        # TODO: Resolve challenge.
+        counterer_id = self.run_counter_action(
+            target=target,
+            primary_action=primary_action,
+            primary_player_id=primary_player_id,
+        )
+
+        if counterer_id is None:
+            # No counter action was taken, so the primary action goes ahead and
+            # we are done.
+
+            turn[ActionType.PrimaryAction].successful = True
+
+            return primary_action, target
+
+        # All counter actions can be challenged, so we always run a challenge.
+
         counter_challenger_id = self.run_challenge(
-            target=None,
+            challenged_player_id=counterer_id,
             primary_player_id=primary_player_id,
             action_type=ActionType.ChallengeCounterAction,
         )
 
-        # TODO: Ensure history is correct.
+        # If the counter action was challenged, we run a challenge response.
+        if counter_challenger_id is not None:
+            if self.run_challenge_response(
+                challenged_player_id=counterer_id,
+                challenging_player_id=counter_challenger_id,
+                primary_player_id=primary_player_id,
+                action_type=ActionType.ChallengeCounterAction
+            ):
+                # If the challenge was successful, the counter action fails,
+                # and so the primary action succeeds, and the turn is over.
+
+                turn[ActionType.ChallengeCounterAction].successful = True
+                turn[ActionType.CounterAction].successful = False
+                turn[ActionType.PrimaryAction].successful = True
+
+                return primary_action, target
+
+            else:
+                # Otherwise, the challenge fails, the counter succeeds, and so
+                # the primary action fails. And then the turn is over.
+
+                turn[ActionType.ChallengeCounterAction].successful = False
+                turn[ActionType.CounterAction].successful = True
+                turn[ActionType.PrimaryAction].successful = False
+
+                return None
+
+        # Otherwise, there was no challenge to the counter action, so the
+        # counter action succeeds, so the primary action fails, and we are
+        # done.
+
+        turn[ActionType.CounterAction].successful = True
+        turn[ActionType.PrimaryAction].successful = False
+
+        return None
 
     def run_primary_action(
         self,
@@ -201,7 +264,7 @@ class Engine:
 
     def run_challenge(
         self,
-        target: Optional[int],
+        challenged_player_id: int,
         primary_player_id: int,
         action_type: (
             Literal[ActionType.ChallengePrimaryAction]
@@ -215,29 +278,16 @@ class Engine:
         only that player may choose to challenge.
         """
 
-        if target is not None:
+        challenging_player_id = self.next_player(challenged_player_id)
+        while challenging_player_id != challenged_player_id:
             if self.run_single_challenge(
-                target,
-                primary_player_id,
-                action_type
-            ):
-                # The target player did challenge.
-                return target
-
-            # The target player did not challenge, and targetted actions cannot
-            # be challenged by other players.
-            return None
-
-        challenge_player_id = self.next_player(primary_player_id)
-        while challenge_player_id != primary_player_id:
-            if self.run_single_challenge(
-                player_id=challenge_player_id,
-                primary_player_id=primary_player_id,
+                player_id=challenging_player_id,
+                primary_player_id=challenged_player_id,
                 action_type=action_type,
             ):
-                return challenge_player_id
+                return challenging_player_id
 
-            challenge_player_id = self.next_player(primary_player_id)
+            challenging_player_id = self.next_player(challenged_player_id)
 
         return None
 
@@ -269,6 +319,13 @@ class Engine:
 
         challenge_action = player.bot.challenge_action_handler()
 
+        if challenge_action == ChallengeAction.NoChallenge:
+            # This player is not issuing a challenge, so we don't need to add
+            # anything to the history.
+            return False
+
+        # This player is issuing a challenge.
+
         action = Action(
             action_type=action_type,
             action=challenge_action,
@@ -276,9 +333,8 @@ class Engine:
             successful=None,
         )
 
-        self.history[-1][ActionType.PrimaryAction] = action
-
-        return challenge_action == ChallengeAction.Challenge
+        self.history[-1][action_type] = action
+        return True
 
     def run_challenge_response(
         self,
@@ -360,12 +416,20 @@ class Engine:
         # The challenge was successful.
         return True
 
-    def run_influence_loss(
+    def run_discard(
         self,
         player_id: int,
         primary_player_id: int,
-    ) -> None:
+    ) -> Character:
+        """
+        Returns the discarded character. Note that this does not discard _to_
+        anywhere, so should not be used directly. It should be called through
+        run_influence_loss (which discards to the revealed cards) or
+        run_discard_to_deck (which discards to the deck).
+        """
+
         player = self.players[player_id]
+
         game_info = GameInfo(
             requested_move=RequestedMove.ChallengeResponse,
             player_id=player_id,
@@ -387,11 +451,204 @@ class Engine:
                 f'{card_to_loose_index}'
             )
 
-        revealed_card = player.hand.pop(card_to_loose_index)
+        return player.hand.pop(card_to_loose_index)
+
+    def run_influence_loss(
+        self,
+        player_id: int,
+        primary_player_id: int,
+    ) -> None:
+        player = self.players[player_id]
+
+        if len(player.hand) == 0:
+            print(
+                'WARNING: run_influence_loss on a player with no cards. Doing '
+                'nothing. I believe this is correct behaviour.'
+            )
+
+        revealed_card = self.run_discard(
+            player_id=player_id,
+            primary_player_id=primary_player_id
+        )
+
         self.revealed_cards[revealed_card] += 1
+
+    def run_discard_to_deck(
+        self,
+        player_id: int,
+        primary_player_id: int,
+    ) -> None:
+        player = self.players[player_id]
+
+        if len(player.hand) == 0:
+            print(
+                'WARNING: run_discard_to_deck on a player with no cards. '
+                'Doing nothing. I believe this is correct behaviour.'
+            )
+
+        revealed_card = self.run_discard(
+            player_id=player_id,
+            primary_player_id=primary_player_id
+        )
+
+        self.deck.append(revealed_card)
 
     def run_counter_action(
         self,
+        primary_action: PrimaryAction,
+        target: Optional[int],
+        primary_player_id: int,
+    ) -> Optional[int]:
+        """
+        If a counter action was taken, returns the id of the player that took
+        the counter action. Otherwise returns None.
+
+        Only allows valid counter actions to the primary action, errors on
+        players giving invalid counter actions.
+
+        If the primary action being taken has a target, only that player may
+        counter.
+        """
+
+        if target is not None:
+            counter_action = self.run_single_counter_action(
+                player_id=target,
+                primary_action=primary_action,
+                primary_player_id=primary_player_id,
+            )
+
+            if counter_action == CounterAction.NoCounterAction:
+                # The target issued no counter action, and targetted actions
+                # cannot be counter actioned by players other than the target.
+
+                return None
+
+            # The target issued a counter action.
+
+            return target
+
+        counterer_player_id = self.next_player(primary_player_id)
+        while counterer_player_id == primary_player_id:
+            counter_action = self.run_single_counter_action(
+                player_id=counterer_player_id,
+                primary_action=primary_action,
+                primary_player_id=primary_player_id,
+            )
+
+            if counter_action != CounterAction.NoCounterAction:
+                return counterer_player_id
+
+            counterer_player_id = self.next_player(primary_player_id)
+
+        return None
+
+    def run_single_counter_action(
+        self,
+        player_id: int,
+        primary_action: PrimaryAction,
         primary_player_id: int
-    ):
-        pass
+    ) -> CounterAction:
+        """
+        Returns the counter action issued by the given player.
+        """
+
+        player = self.players[player_id]
+        game_info = GameInfo(
+            requested_move=RequestedMove.CounterAction,
+            player_id=player_id,
+            balances=self.balances,
+            own_cards=player.hand,
+            revealed_cards=self.revealed_cards,
+            players_cards_num=self.players_cards_num,
+            history=self.history,
+            current_primary_player_id=primary_player_id,
+        )
+        player.bot.game_info = game_info
+
+        counter_action = player.bot.counter_action_handler()
+
+        if counter_action == CounterAction.NoCounterAction:
+            # The player has issued no CounterAction.
+            return CounterAction.NoCounterAction
+
+        # This player has issued a CounterAction.
+
+        if (
+            counter_action
+            not in PRIMARY_ACTION_TO_COUNTER_ACTIONS[primary_action]
+        ):
+            # If the CounterAction is not valid for the primary action, we
+            # error.
+            raise ValueError(
+                f'Player {player_id} issued invalid CounterAction '
+                f'{counter_action} against PrimaryAction {primary_action}'
+            )
+
+        # Otherwise we update the history and return their counter action.
+
+        action = Action(
+            action_type=ActionType.CounterAction,
+            action=counter_action,
+            player_id=player_id,
+            successful=None
+        )
+        self.history[-1][ActionType.CounterAction] = action
+
+        return counter_action
+
+    def resolve_successful_primary_action(
+        self,
+        primary_player_id: int,
+        primary_action: PrimaryAction,
+        target: Optional[int]
+    ) -> None:
+        primary_player = self.players[primary_player_id]
+
+        if primary_action == PrimaryAction.Income:
+            primary_player.balance += 1
+
+        elif primary_action == PrimaryAction.ForeignAid:
+            primary_player.balance += 2
+
+        elif primary_action == PrimaryAction.Coup:
+            if target is None:
+                raise ValueError(f'Coup requires a target.')
+
+            self.run_influence_loss(
+                player_id=target,
+                primary_player_id=primary_player_id
+            )
+
+        elif primary_action == PrimaryAction.Tax:
+            primary_player.balance += 3
+
+        elif primary_action == PrimaryAction.Assassinate:
+            if target is None:
+                raise ValueError(f'Assassinate requires a target.')
+
+            self.run_influence_loss(
+                player_id=target,
+                primary_player_id=primary_player_id
+            )
+
+        elif primary_action == PrimaryAction.Exchange:
+            primary_player.hand.append(self.draw_card())
+            primary_player.hand.append(self.draw_card())
+            self.run_discard_to_deck(
+                player_id=primary_player_id,
+                primary_player_id=primary_player_id
+            )
+            self.run_discard_to_deck(
+                player_id=primary_player_id,
+                primary_player_id=primary_player_id
+            )
+
+        elif primary_action == PrimaryAction.Steal:
+            if target is None:
+                raise ValueError(f'Steal requires a target.')
+
+            self.players[target].balance -= 2
+            primary_player.balance += 2
+
+        else:
+            raise ValueError(f'Unknown PrimaryAction {primary_action}')

@@ -6,6 +6,7 @@ Some coup bot thing or something.
 
 - Move common stuff into common (and ensure make submission still works).
 - Fix type errors.
+- Enforce keyword arguments to methods in engine.
 
 ## Engine
 
