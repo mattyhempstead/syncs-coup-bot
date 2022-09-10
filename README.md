@@ -2,11 +2,14 @@
 
 Some coup bot thing or something.
 
+## TODO:
+
+- Move common stuff into common (and ensure make submission still works).
+- Fix type errors.
+
 ## Engine
 
-`python`
-
-
+Run with `python -m coup.engine.engine`.
 
 ## Maths
 

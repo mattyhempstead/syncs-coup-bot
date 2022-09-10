@@ -7,5 +7,8 @@ class Player:
         self.bot = bot
         self.hand = hand
 
-        self.eliminated = False
         self.balance = 2
+
+    @property
+    def eliminated(self) -> bool:
+        return len(self.hand) == 0

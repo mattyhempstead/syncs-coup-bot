@@ -9,24 +9,12 @@ from coup.bots.enums import (
 from coup.bots.action import Action
 from coup.bots.game_info import GameInfo
 
+from coup.common.rules import (
+    NUMBER_OF_PLAYERS, PRIMARY_ACTION_TO_CARD, COUNTER_ACTION_TO_CARD,
+    PRIMARY_ACTION_TO_COST, PRIMARY_ACTION_TO_COUNTER_ACTIONS
+)
+
 from coup.engine.player import Player
-
-
-NUMBER_OF_PLAYERS = 5
-CARD_TO_PRIMARY_ACTION: dict[Character, Optional[PrimaryAction]] = {
-    Character.Duke: PrimaryAction.Tax,
-    Character.Assassin: PrimaryAction.Assassinate,
-    Character.Ambassador: PrimaryAction.Exchange,
-    Character.Captain: PrimaryAction.Steal,
-    Character.Contessa: None,
-}
-CARD_TO_COUNTER_ACTION: dict[Character, Optional[CounterAction]] = {
-    Character.Duke: CounterAction.BlockForeignAid,
-    Character.Assassin: None,
-    Character.Ambassador: CounterAction.BlockStealingAsCaptain,
-    Character.Captain: CounterAction.BlockStealingAsAmbassador,
-    Character.Contessa: CounterAction.BlockAssassination,
-}
 
 
 class Engine:
@@ -71,6 +59,8 @@ class Engine:
             if iterated > NUMBER_OF_PLAYERS:
                 raise Exception('All players eliminated')
 
+        return player_id
+
     @property
     def balances(self) -> list[int]:
         return [player.balance for player in self.players]
@@ -100,36 +90,79 @@ class Engine:
         primary_player_id: int
     ) -> None:
         """
-        Runs a turn, but doesn't actually apply the primary action.
+        Runs a turn, but doesn't actually apply the primary action or eliminate
+        players that are reduced to zero influence (hand size). Any resolution
+        to challenges and counter actions is applied. As the cost of a primary
+        action is charged regardless of whether or not it succeeds, this does
+        charge for it, but the actual standard effects of the action will need
+        to be resolved later.
+
+        This history, including the success state of all actions, will be
+        updated to their final values by this method.
         """
 
         self.history.append({})
+        turn = self.history[-1]
 
-        self.run_primary_action(primary_player_id)
+        primary_action, target = self.run_primary_action(primary_player_id)
 
-        primary_challenged_by = self.run_challenge(
-            primary_player_id,
-            ActionType.ChallengePrimaryAction
-        )
-
-        # TODO: Resolve challenge
-        if primary_challenged_by is not None:
-            self.run_challenge_response(
+        primary_challenger_id = None
+        if primary_action in PRIMARY_ACTION_TO_CARD:
+            # Only allow a challenge if the primary action taken corresponds to
+            # a card.
+            primary_challenger_id = self.run_challenge(
+                target=target,
                 primary_player_id=primary_player_id,
-                challenging_player_id=primary_challenged_by,
                 action_type=ActionType.ChallengePrimaryAction,
             )
 
-        # TODO: Counter action.
+        if primary_challenger_id is not None:
+            # If someone challenged, we run a challenge response.
+    
+            if self.run_challenge_response(
+                challenged_player_id=primary_player_id,
+                challenging_player_id=primary_challenger_id,
+                primary_player_id=primary_player_id,
+                action_type=ActionType.ChallengePrimaryAction,
+            ):
+                # If the challenge is successful, the primary action fails and
+                # the turn is over.
 
-        secondary_challenged_by = self.run_challenge(
-            primary_player_id,
-            ActionType.ChallengeCounterAction
-        )
+                turn[ActionType.PrimaryAction].successful = False
+                turn[ActionType.ChallengePrimaryAction].successful = True
+                return
+            
+            # Otherwise, the challenge fails, and the turn continues.
+            turn[ActionType.ChallengePrimaryAction].successful = False
+
+        if len(PRIMARY_ACTION_TO_COUNTER_ACTIONS[primary_action]) == 0:
+            # There are no possible counter actions, so the primary action goes
+            # ahead and the turn is done.
+
+            turn[ActionType.PrimaryAction].successful = True
+            return
+        
+        # Otherwise, we still need to run the counter action and any challenges
+        # to the counter action.
 
         # TODO: Resolve challenge.
+        counter_challenger_id = self.run_challenge(
+            target=None,
+            primary_player_id=primary_player_id,
+            action_type=ActionType.ChallengeCounterAction,
+        )
 
-    def run_primary_action(self, primary_player_id: int) -> None:
+        # TODO: Ensure history is correct.
+
+    def run_primary_action(
+        self,
+        primary_player_id: int
+    ) -> tuple[PrimaryAction, Optional[int]]:
+        """
+        Returns the PrimaryAction taken and its target, for ease of checking if
+        challenges / counter actions are allowed.
+        """
+
         player = self.players[primary_player_id]
         game_info = GameInfo(
             requested_move=RequestedMove.PrimaryAction,
@@ -145,6 +178,15 @@ class Engine:
 
         primary_action, target = player.bot.primary_action_handler()
 
+        # Charge the cost of the action, because they pay this regardless of
+        # their success.
+        if player.balance < PRIMARY_ACTION_TO_COST[primary_action]:
+            raise Exception(
+                f'Player {primary_player_id} does not have enough coins to '
+                f'take the primary action {primary_action}'
+            )
+        player.balance -= PRIMARY_ACTION_TO_COST[primary_action]
+
         action = Action(
             action_type=ActionType.PrimaryAction,
             action=primary_action,
@@ -155,8 +197,11 @@ class Engine:
 
         self.history[-1][ActionType.PrimaryAction] = action
 
+        return primary_action, target
+
     def run_challenge(
         self,
+        target: Optional[int],
         primary_player_id: int,
         action_type: (
             Literal[ActionType.ChallengePrimaryAction]
@@ -165,7 +210,23 @@ class Engine:
     ) -> Optional[int]:
         """
         Returns the id of the player that challenged, or None if nobody did.
+
+        If the action the challenge is being offered for targetted a player,
+        only that player may choose to challenge.
         """
+
+        if target is not None:
+            if self.run_single_challenge(
+                target,
+                primary_player_id,
+                action_type
+            ):
+                # The target player did challenge.
+                return target
+
+            # The target player did not challenge, and targetted actions cannot
+            # be challenged by other players.
+            return None
 
         challenge_player_id = self.next_player(primary_player_id)
         while challenge_player_id != primary_player_id:
@@ -221,59 +282,83 @@ class Engine:
 
     def run_challenge_response(
         self,
-        primary_player_id: int,
+        challenged_player_id: int,
         challenging_player_id: int,
+        primary_player_id: int,
         action_type: (
             Literal[ActionType.ChallengePrimaryAction]
             | Literal[ActionType.ChallengeCounterAction]
         )
-    ) -> None:
-        player = self.players[primary_player_id]
+    ) -> bool:
+        """
+        Returns whether or not the challenge was successful, to help in the
+        setting of history. Does not set history directly.
+        """
+
+        challenged_player = self.players[challenged_player_id]
         game_info = GameInfo(
             requested_move=RequestedMove.ChallengeResponse,
-            player_id=primary_player_id,
+            player_id=challenged_player_id,
             balances=self.balances,
-            own_cards=player.hand,
+            own_cards=challenged_player.hand,
             revealed_cards=self.revealed_cards,
             players_cards_num=self.players_cards_num,
             history=self.history,
             current_primary_player_id=primary_player_id,
         )
-        player.bot.game_info = game_info
+        challenged_player.bot.game_info = game_info
 
-        card_to_reveal = player.bot.challenge_response_handler()
+        card_to_reveal = challenged_player.bot.challenge_response_handler()
 
-        revealed_card = player.hand.pop()
+        # Note that this will make their hand look 1 card smaller than it
+        # should be (which may causes the challenged_player to temporarily look
+        # eliminated).
+        revealed_card = challenged_player.hand.pop()
 
         if action_type == ActionType.ChallengePrimaryAction:
             primary_action = self.history[-1][ActionType.PrimaryAction].action
-            allowed = primary_action == CARD_TO_PRIMARY_ACTION[revealed_card]
+            if not isinstance(primary_action, PrimaryAction):
+                raise TypeError('Expected PrimaryAction')
+
+            allowed = PRIMARY_ACTION_TO_CARD[primary_action] == revealed_card
+
         elif action_type == ActionType.ChallengeCounterAction:
             counter_action = self.history[-1][ActionType.CounterAction].action
-            allowed = counter_action == CARD_TO_COUNTER_ACTION[revealed_card]
+            if not isinstance(counter_action, CounterAction):
+                raise TypeError('Expected CounterAction')
+
+            allowed = COUNTER_ACTION_TO_CARD[counter_action] == revealed_card
+
         else:
             raise ValueError(f'Unexpected action_type {action_type}')
 
-        # TODO: Finish this.
-
         if allowed:
-            # The original player was telling the truth.
+            # The challenged player was telling the truth, challenging player
+            # looses a card.
 
             self.run_influence_loss(
                 player_id=challenging_player_id,
                 primary_player_id=primary_player_id
             )
 
-        else:
-            # The original player was lying.
+            # The challenged player returns their card to the draw deck, and
+            # then draws a new one.
 
-            self.run_influence_loss(
-                player_id=challenging_player_id,
-                primary_player_id=primary_player_id
-            )
+            self.deck.append(revealed_card)
+            challenged_player.hand.append(self.draw_card())
 
-        if len(player.hand) == 0:
-            player.eliminated = True
+            # The challenge was unsuccessful.
+            return False
+
+        # Otherwise, the challenged player was lying, and they just don't get
+        # back the card they revealed.
+
+        # TODO: Check if this is the case, or if they are instead issued
+        # with a choice of what to discard. If that is the case, then the
+        # "revealed card" shouldn't be popped from their hand.
+
+        # The challenge was successful.
+        return True
 
     def run_influence_loss(
         self,
@@ -295,8 +380,18 @@ class Engine:
 
         card_to_loose_index = player.bot.discard_choice_handler()
 
+        if card_to_loose_index < 0 or card_to_loose_index >= len(player.hand):
+            raise Exception(
+                f'Player {player_id} with hand of size {len(player.hand)} '
+                'gave invalid discard choice of card with index '
+                f'{card_to_loose_index}'
+            )
+
         revealed_card = player.hand.pop(card_to_loose_index)
         self.revealed_cards[revealed_card] += 1
 
-        if len(player.hand) == 0:
-            player.eliminated = True
+    def run_counter_action(
+        self,
+        primary_player_id: int
+    ):
+        pass
