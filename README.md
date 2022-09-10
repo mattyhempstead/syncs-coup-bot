@@ -24,3 +24,22 @@ So ~34% chance of not having two given characters.
 e.g. 1/3 chance of not having Duke OR Captain
 
 
+
+## End Games
+
+### 1. 
+ - Two players (including us) remain with 1 card each
+ - Opponent has >=7 coins and so will certainly coup next turn
+ - We should certainly do one of the possible actions to stop them from couping, since we lose otherwise.
+ - Coup (this is forced if we have 7 coins or more)
+     - This could be pointless if opponent has 2 cards
+     - We should try to avoid self-forced coup's if we expect to be in this situation next turn
+ - Assassinate (or fake assassinate) if we have enough coins
+ - Steal (or fake steal) this will make the opponent drop below 7 coins
+
+### 2.
+- We have a single card left
+- Some opponent has just primaried an assassination on us
+- We should certainly stop the assassination through any means possible
+- Block with Contessa if we have it (or fake block)
+- Challenge their Assassin (this probably less optimal against honest players)

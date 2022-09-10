@@ -35,6 +35,8 @@ class OtherBot(BaseBot):
             else:
                 return (PrimaryAction.Income, None)
 
+
+
     def counter_action_handler(self) -> CounterAction:
         action = self.game_info.get_history_primary_action()
 
@@ -58,7 +60,14 @@ class OtherBot(BaseBot):
             if action.action == PrimaryAction.Steal:
                 return CounterAction.BlockStealingAsAmbassador
 
+
+        # Fake block assassination with Contessa if we will certainly lose otherwise
+        if self.game_info.current_player.card_num == 1 and action.action == PrimaryAction.Assassinate:
+            return CounterAction.BlockAssassination
+
+
         return CounterAction.NoCounterAction
+
 
     def challenge_action_handler(self) -> ChallengeAction:
         """
@@ -112,4 +121,26 @@ class OtherBot(BaseBot):
         return 0
 
     def discard_choice_handler(self) -> int:
-        return 0
+        """
+            Which card to discard if we are assassinated or couped.
+        """
+
+        # This could definitely be a nice loop but for now I'm just being explicit until the strategy abstractions are clearer
+
+        if Character.Ambassador in self.game_info.own_cards:
+            return self.game_info.get_character_location(Character.Ambassador)
+
+        if Character.Contessa in self.game_info.own_cards:
+            return self.game_info.get_character_location(Character.Contessa)
+
+        if Character.Captain in self.game_info.own_cards:
+            return self.game_info.get_character_location(Character.Captain)
+        
+        if Character.Assassin in self.game_info.own_cards:
+            return self.game_info.get_character_location(Character.Assassin)
+        
+        if Character.Duke in self.game_info.own_cards:
+            return self.game_info.get_character_location(Character.Duke)
+
+
+        raise Exception("What else is there to discard??")
