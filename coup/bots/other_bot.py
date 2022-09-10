@@ -9,7 +9,7 @@ from typing import Optional
 class OtherBot(BaseBot):
     def primary_action_handler(self) -> tuple[PrimaryAction, Optional[int]]:
 
-        # We must coup if we can afford it
+        # We must coup if we can afford it (technically if >=10)
         if self.game_info.current_player.balance >= 7:
             target_player = self.game_info.get_winning_player()
             return (PrimaryAction.Coup, target_player.player_id)
@@ -82,6 +82,7 @@ class OtherBot(BaseBot):
 
         return ChallengeAction.NoChallenge
 
+
     def challenge_response_handler(self) -> int:
         """
             Which card number we reveal if we are challenged (for a primary or a counter).
@@ -109,6 +110,10 @@ class OtherBot(BaseBot):
 
         else:
             action = self.game_info.get_history_primary_action()
+
+            # Reveal Duke if we are challenged for Tax
+            if action.action == PrimaryAction.Tax and Character.Duke in self.game_info.own_cards:
+                return self.game_info.get_character_location(Character.Duke)
 
             # Reveal Captain if we are challenged for Stealing
             if action.action == PrimaryAction.Steal and Character.Captain in self.game_info.own_cards:

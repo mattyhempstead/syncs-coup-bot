@@ -43,3 +43,15 @@ e.g. 1/3 chance of not having Duke OR Captain
 - We should certainly stop the assassination through any means possible
 - Block with Contessa if we have it (or fake block)
 - Challenge their Assassin (this probably less optimal against honest players)
+
+
+### 3.
+ - A single opponent remains with one card left
+ - We have Assassin card
+ - We should probably assassinate as our highest priority move
+    - Opponent might block
+      - We could perhaps check if they historically have blocked assassinations or historically been honest?
+      - If not, they are probably lying and we can challenge it.
+      - Just gotta be careful here risk wise.
+
+
