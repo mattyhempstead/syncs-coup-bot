@@ -10,7 +10,7 @@ Some coup bot thing or something.
 
 ## Engine
 
-Run with `python -m coup.engine.engine`.
+Run with `python -m coup.engine`.
 
 ## Maths
 

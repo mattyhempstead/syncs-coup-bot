@@ -80,9 +80,20 @@ class Engine:
         return self.deck.pop()
 
     def run_game(self) -> None:
+        
+        # Print some stuff about the game
+        print("Cards dealt:")
+        for p in self.players:
+            print(p, '-', p.hand)
+        print()
+
         turn = 0
         primary_player_id = 0
         while True:
+            print(f'Turn {turn}.')
+            print("Balances:", [p.balance for p in self.players])
+            print("Card Nums:", [len(p.hand) for p in self.players])
+
             primary_action_details = self.run_turn_without_primary_resolution(
                 primary_player_id
             )
@@ -95,41 +106,40 @@ class Engine:
                     target=target
                 )
 
-            print(f'Turn {turn}.')
             if ActionType.PrimaryAction in self.history[-1]:
                 action = self.history[-1][ActionType.PrimaryAction]
                 print(
-                    f'PrimaryAction: player {action.player_id}; action '
+                    f'PrimaryAction: {self.players[action.player_id]}; action '
                     f'{action.action.name}; target {action.target}; '
                     f'successful {action.successful}.'
                 )
             if ActionType.ChallengePrimaryAction in self.history[-1]:
                 action = self.history[-1][ActionType.ChallengePrimaryAction]
                 print(
-                    f'ChallengePrimaryAction: player {action.player_id}; '
+                    f'ChallengePrimaryAction: {self.players[action.player_id]}; '
                     f'action {action.action.name}; successful '
                     f'{action.successful}.'
                 )
             if ActionType.CounterAction in self.history[-1]:
                 action = self.history[-1][ActionType.CounterAction]
                 print(
-                    f'CounterAction: player {action.player_id}; action '
+                    f'CounterAction: {self.players[action.player_id]}; action '
                     f'{action.action.name}; successful {action.successful}.'
                 )
             if ActionType.ChallengeCounterAction in self.history[-1]:
                 action = self.history[-1][ActionType.ChallengeCounterAction]
                 print(
-                    f'ChallengeCounterAction: player {action.player_id}; '
+                    f'ChallengeCounterAction: {self.players[action.player_id]}; '
                     f'action {action.action.name}; successful '
                     f'{action.successful}.'
                 )
 
             remaining = list(
-                filter(lambda player: player.eliminated, self.players)
+                filter(lambda player: not player.eliminated, self.players)
             )
             if len(remaining) == 1:
                 print(f'Game over.')
-                print(f'Player {remaining[0].player_id} wins.')
+                print(f'{self.players[remaining[0].player_id]} wins.')
 
                 break
 

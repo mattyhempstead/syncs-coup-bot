@@ -13,3 +13,6 @@ class Player:
     @property
     def eliminated(self) -> bool:
         return len(self.hand) == 0
+
+    def __repr__(self):
+        return f'P{self.player_id} ({str(self.bot)})'
