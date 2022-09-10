@@ -3,8 +3,9 @@ from coup.bots.base_bot import BaseBot
 
 
 class Player:
-    def __init__(self, bot: BaseBot, hand: list[Character]):
+    def __init__(self, bot: BaseBot, player_id: int, hand: list[Character]):
         self.bot = bot
+        self.player_id = player_id
         self.hand = hand
 
         self.balance = 2

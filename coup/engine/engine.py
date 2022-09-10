@@ -35,9 +35,14 @@ class Engine:
         shuffle(self.deck)
 
         self.players: list[Player] = []
-        for bot_class in bot_classes:
-            hand = [self.deck.pop(), self.deck.pop()]
-            self.players.append(Player(bot_class(), hand))
+        for player_id, bot_class in enumerate(bot_classes):
+            self.players.append(
+                Player(
+                    bot=bot_class(local_mode=True),
+                    player_id=player_id,
+                    hand=[self.deck.pop(), self.deck.pop()]
+                )
+            )
 
         self.revealed_cards: dict[Character, int] = {
             Character.Duke: 0,
@@ -50,7 +55,7 @@ class Engine:
         self.history: list[dict[ActionType, Action]] = []
 
     def next_player(self, current_player: int) -> int:
-        player_id = current_player
+        player_id = (current_player + 1) % NUMBER_OF_PLAYERS
         iterated = 0
         while self.players[player_id].eliminated:
             player_id = (player_id + 1) % NUMBER_OF_PLAYERS
@@ -89,6 +94,44 @@ class Engine:
                     primary_action=primary_action,
                     target=target
                 )
+
+            print(f'Turn {turn}.')
+            if ActionType.PrimaryAction in self.history[-1]:
+                action = self.history[-1][ActionType.PrimaryAction]
+                print(
+                    f'PrimaryAction: player {action.player_id}; action '
+                    f'{action.action.name}; target {action.target}; '
+                    f'successful {action.successful}.'
+                )
+            if ActionType.ChallengePrimaryAction in self.history[-1]:
+                action = self.history[-1][ActionType.ChallengePrimaryAction]
+                print(
+                    f'ChallengePrimaryAction: player {action.player_id}; '
+                    f'action {action.action.name}; successful '
+                    f'{action.successful}.'
+                )
+            if ActionType.CounterAction in self.history[-1]:
+                action = self.history[-1][ActionType.CounterAction]
+                print(
+                    f'CounterAction: player {action.player_id}; action '
+                    f'{action.action.name}; successful {action.successful}.'
+                )
+            if ActionType.ChallengeCounterAction in self.history[-1]:
+                action = self.history[-1][ActionType.ChallengeCounterAction]
+                print(
+                    f'ChallengeCounterAction: player {action.player_id}; '
+                    f'action {action.action.name}; successful '
+                    f'{action.successful}.'
+                )
+
+            remaining = list(
+                filter(lambda player: player.eliminated, self.players)
+            )
+            if len(remaining) == 1:
+                print(f'Game over.')
+                print(f'Player {remaining[0].player_id} wins.')
+
+                break
 
             turn += 1
             primary_player_id = self.next_player(primary_player_id)
@@ -287,7 +330,7 @@ class Engine:
             ):
                 return challenging_player_id
 
-            challenging_player_id = self.next_player(challenged_player_id)
+            challenging_player_id = self.next_player(challenging_player_id)
 
         return None
 
@@ -538,7 +581,7 @@ class Engine:
             if counter_action != CounterAction.NoCounterAction:
                 return counterer_player_id
 
-            counterer_player_id = self.next_player(primary_player_id)
+            counterer_player_id = self.next_player(counterer_player_id)
 
         return None
 
