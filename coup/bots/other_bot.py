@@ -81,9 +81,21 @@ class OtherBot(BaseBot):
         if ActionType.CounterAction in self.game_info.history[-1]:
             action = self.game_info.get_history_counter_action()
 
-            # Reveal Duke if we are challenged for Blocking ForeignAid
+            # Reveal Duke if we are challenged for blocking ForeignAid
             if action.action == CounterAction.BlockForeignAid and Character.Duke in self.game_info.own_cards:
                 return self.game_info.get_character_location(Character.Duke)
+
+            # Reveal Captain if we are challenged for blocking Steal
+            if action.action == CounterAction.BlockStealAsCaptain and Character.Captain in self.game_info.own_cards:
+                return self.game_info.get_character_location(Character.Captain)
+
+            # Reveal Ambassador if we are challenged for blocking Steal
+            if action.action == CounterAction.BlockStealingAsAmbassador and Character.Ambassador in self.game_info.own_cards:
+                return self.game_info.get_character_location(Character.Ambassador)
+
+            # Reveal Contessa if we are challenged for blocking Assassination
+            if action.action == CounterAction.BlockAssassination and Character.Contessa in self.game_info.own_cards:
+                return self.game_info.get_character_location(Character.Contessa)
 
         else:
             action = self.game_info.get_history_primary_action()

@@ -176,7 +176,7 @@ class GameInfo:
             if counter_action.successful == False: continue
 
             # Skip if it was us
-            if counter_action.player == self.player_id: continue
+            if counter_action.player_id == self.player_id: continue
 
             return True
         
