@@ -68,6 +68,7 @@ class OtherBot(BaseBot):
         TODO: Likely scenarios of faking
           - A player avoids countering when possible (e.g. on a foreign aid), then claims the benefit from that card (e.g. tax)
           - A player calls Contessa when they have one card left (since they will lose unless they counter)
+          - A player performs 3 different Actions (meaning they dont have at least one of them)
         """
 
         return ChallengeAction.NoChallenge
@@ -86,7 +87,7 @@ class OtherBot(BaseBot):
                 return self.game_info.get_character_location(Character.Duke)
 
             # Reveal Captain if we are challenged for blocking Steal
-            if action.action == CounterAction.BlockStealAsCaptain and Character.Captain in self.game_info.own_cards:
+            if action.action == CounterAction.BlockStealingAsCaptain and Character.Captain in self.game_info.own_cards:
                 return self.game_info.get_character_location(Character.Captain)
 
             # Reveal Ambassador if we are challenged for blocking Steal
