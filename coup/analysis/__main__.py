@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from random import shuffle
+from pathlib import Path
 
 from coup.engine.engine import Engine
 from coup.bots.bots.base_bot import BaseBot
@@ -79,7 +80,7 @@ def test_bots(bot_classes, game_count):
 
 if __name__ == "__main__":
 
-    BOT_CLASSES = [BaseBot, BaseBot, BaseBot, OtherBot, BaseBot]
+    BOT_CLASSES = [OtherBot, BaseBot, BaseBot, BaseBot, BaseBot]
     # BOT_CLASSES = [BaseBot, BaseBot, BaseBot, BaseBot, BaseBot]
     # BOT_CLASSES = [OtherBot, ForeignAidBot, PrimaryActionBot, BaseBot, BaseBot]
     # BOT_CLASSES = [OtherBot, ForeignAidBot, PrimaryActionBot, BaseBot, BaseBot]
@@ -87,8 +88,8 @@ if __name__ == "__main__":
     GAME_COUNT = 1000
 
     df = test_bots(BOT_CLASSES, GAME_COUNT)
-
     # print(df)
+    # df.to_csv(str(Path(__file__).parent) + '/results.csv')
 
     # Dataframe with one row per game 
     df_game_group = df[["game_num", "turns", "tie"]].drop_duplicates().reset_index(drop=True)
@@ -110,10 +111,9 @@ if __name__ == "__main__":
     print(bot_results)
     print(bot_results / GAME_COUNT)
 
-    # Bot0 table position VS
-    # Print the ranks of a specific bot depending on its table position
-    # bot0_results = df.value_counts(["bot0.table_pos", "bot0.game_rank"])
+    # Bot0 table position VS game rank
     print("\nbot0 table_pos VS game_rank")
+    print(BOT_CLASSES[0])
     df_bot0 = df[df["bot_num"] == 0]
     bot0_results = pd.crosstab(df_bot0["game_rank"], df_bot0["table_pos"])
     print(bot0_results)
