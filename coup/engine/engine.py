@@ -20,7 +20,12 @@ from coup.engine.player import Player
 class Engine:
     TIMEOUT_TURN:int = 100  # Number of turns until we timeout the engine
 
-    def __init__(self, bot_classes: list[Type[BaseBot]], debug:bool=True) -> None:
+    def __init__(
+        self,
+        bot_classes: list[Type[BaseBot]],
+        debug:bool=True,
+        shuffle_players: bool=False
+    ) -> None:
         if len(bot_classes) != NUMBER_OF_PLAYERS:
             raise ValueError(
                 f'Requires {NUMBER_OF_PLAYERS} competitors got '
@@ -36,7 +41,13 @@ class Engine:
         )
         shuffle(self.deck)
 
+
         self.players: list[Player] = []
+
+        if shuffle_players:
+            bot_classes = bot_classes.copy()
+            shuffle(bot_classes)
+
         for player_id, bot_class in enumerate(bot_classes):
             self.players.append(
                 Player(
@@ -45,6 +56,7 @@ class Engine:
                     hand=[self.deck.pop(), self.deck.pop()]
                 )
             )
+
 
         self.revealed_cards: dict[Character, int] = {
             Character.Duke: 0,
