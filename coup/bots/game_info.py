@@ -130,14 +130,20 @@ class GameInfo:
         """ Returns the number of cards owned by the best non-self player """
         return max([p.card_num for p in self.players if not p.is_current])
 
+    def get_winning_player_order(self) -> List[Player]:
+        """ 
+        Returns a list of alive (non-self) players ordered by card number desc then coins desc.
+        """
+        most_cards = self.get_most_cards()
+        players = [p for p in self.players if not p.is_current and p.alive]
+        players.sort(key=lambda p: (p.card_num, p.balance), reverse=True)
+        return players
+
     def get_winning_player(self) -> Player:
         """ 
         Returns the first (non-self) player ordered by card number desc then coins desc.
         """
-        most_cards = self.get_most_cards()
-        players = [p for p in self.players if not p.is_current and p.card_num == most_cards]
-        players.sort(key=lambda p: p.balance, reverse=True)
-        return players[0]
+        return self.get_winning_player_order()[0]
 
     def get_history_primary_action(self):
         """ Returns the Action object from history of the PrimaryAction assuming one exists """
@@ -156,7 +162,7 @@ class GameInfo:
         return action
 
 
-    def exists_historical_counter(self, counter_action_type:CounterAction) -> bool:
+    def exists_historical_counter(self, counter_action_type:CounterAction, player_id:Optional[int]=None) -> bool:
         """
             Returns whether a specific CounterAction type has been successfully applied in the past.
             (Not including counters that we applied).
@@ -178,6 +184,9 @@ class GameInfo:
             # Skip if it was us
             if counter_action.player_id == self.player_id: continue
 
+            # Skip if not specified target player
+            if player_id is not None and counter_action.player_id != player_id: continue
+
             return True
         
         return False
@@ -192,3 +201,7 @@ class GameInfo:
             return 1
         else:
             return 0
+
+
+    # def get_winning_player_without_counter(self, counter_action_type:CounterAction) -> Player:
+    #     pass

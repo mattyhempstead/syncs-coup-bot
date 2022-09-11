@@ -24,13 +24,16 @@ class BaseBot:
         if self.game_info.current_player.balance >= 7:
             target_player = self.game_info.get_next_alive_player()
             return (PrimaryAction.Coup, target_player.player_id)
-        elif Character.Duke in self.game_info.own_cards:
-            return (PrimaryAction.Tax, None)
-        elif Character.Assassin in self.game_info.own_cards and self.game_info.current_player.balance >= 3:
-            target_player = self.game_info.get_next_alive_player()
-            return (PrimaryAction.Assassinate, target_player.player_id)
-        else:
-            return (PrimaryAction.Income, None)
+
+        return (PrimaryAction.Income, None)
+
+        # elif Character.Duke in self.game_info.own_cards:
+        #     return (PrimaryAction.Tax, None)
+        # elif Character.Assassin in self.game_info.own_cards and self.game_info.current_player.balance >= 3:
+        #     target_player = self.game_info.get_next_alive_player()
+        #     return (PrimaryAction.Assassinate, target_player.player_id)
+        # else:
+        #     return (PrimaryAction.Income, None)
 
     def counter_action_handler(self) -> CounterAction:
         return CounterAction.NoCounterAction

@@ -1,5 +1,5 @@
 from coup.bots.enums import Character
-from coup.bots.base_bot import BaseBot
+from coup.bots.bots.base_bot import BaseBot
 
 
 class Player:

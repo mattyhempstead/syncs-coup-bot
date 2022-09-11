@@ -1,10 +1,13 @@
+
+BOT_FILE_NAME = 'other_bot.py'
+
 FILE_NAMES = [
     'coup/bots/enums.py',
     'coup/bots/action.py',
     'coup/bots/game_info.py',
     'coup/bots/bot_battle.py',
-    'coup/bots/base_bot.py',
-    'coup/bots/other_bot.py',
+    'coup/bots/bots/base_bot.py',
+    f'coup/bots/bots/{BOT_FILE_NAME}',
     'coup/bots/run.py',
 ]
 OUTPUT = 'submission.py'

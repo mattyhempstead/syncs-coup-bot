@@ -1,5 +1,5 @@
 from coup.bots.enums import *
-from coup.bots.base_bot import BaseBot
+from coup.bots.bots.base_bot import BaseBot
 
 """END LOCAL IMPORTS"""
 
@@ -23,7 +23,7 @@ class OtherBot(BaseBot):
 
         elif Character.Captain in self.game_info.own_cards and self.game_info.get_richest_player().balance > 0:
             target_player = self.game_info.get_richest_player()
-            print("Stealing from", target_player.player_id, flush=True)
+            #print("Stealing from", target_player.player_id, flush=True)
             return (PrimaryAction.Steal, target_player.player_id)
 
         else:

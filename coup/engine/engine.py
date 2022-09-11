@@ -1,7 +1,7 @@
 from typing import Type, Optional, Literal
 from random import shuffle
 
-from coup.bots.base_bot import BaseBot
+from coup.bots.bots.base_bot import BaseBot
 from coup.bots.enums import (
     Character, ActionType, RequestedMove, PrimaryAction, ChallengeAction,
     CounterAction
