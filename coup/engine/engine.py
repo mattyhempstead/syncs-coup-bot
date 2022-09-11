@@ -18,7 +18,9 @@ from coup.engine.player import Player
 
 
 class Engine:
-    def __init__(self, bot_classes: list[Type[BaseBot]]) -> None:
+    TIMEOUT_TURN:int = 100  # Number of turns until we timeout the engine
+
+    def __init__(self, bot_classes: list[Type[BaseBot]], debug:bool=True) -> None:
         if len(bot_classes) != NUMBER_OF_PLAYERS:
             raise ValueError(
                 f'Requires {NUMBER_OF_PLAYERS} competitors got '
@@ -54,6 +56,17 @@ class Engine:
 
         self.history: list[dict[ActionType, Action]] = []
 
+
+        # Sorry James, my usage of various class variables and methods is probably quite disagreeable
+
+        self.debug:bool = debug
+
+        self.complete:bool = False
+
+        self.eliminated_players:List[Player] = []
+        """ A list of players which are appended as they are eliminated """
+
+
     def next_player(self, current_player: int) -> int:
         player_id = (current_player + 1) % NUMBER_OF_PLAYERS
         iterated = 0
@@ -82,17 +95,25 @@ class Engine:
     def run_game(self) -> None:
         
         # Print some stuff about the game
-        print("Cards dealt:")
-        for p in self.players:
-            print(p, '-', p.hand)
-        print()
+        if self.debug:
+            print("Cards dealt:")
+            for p in self.players:
+                print(p, '-', p.hand)
+            print()
 
         turn = 0
         primary_player_id = 0
         while True:
-            print(f'Turn {turn}.')
-            print("Balances:", [p.balance for p in self.players])
-            print("Card Nums:", [len(p.hand) for p in self.players])
+            if turn == Engine.TIMEOUT_TURN:
+                if self.debug:
+                    print(f"Game timed out after {turn} turns")
+                    break
+                break
+
+            if self.debug:
+                print(f'Turn {turn}.')
+                print("Balances:", [p.balance for p in self.players])
+                print("Card Nums:", [len(p.hand) for p in self.players])
 
             primary_action_details = self.run_turn_without_primary_resolution(
                 primary_player_id
@@ -108,43 +129,53 @@ class Engine:
 
             if ActionType.PrimaryAction in self.history[-1]:
                 action = self.history[-1][ActionType.PrimaryAction]
-                print(
-                    f'PrimaryAction: {self.players[action.player_id]}; action '
-                    f'{action.action.name}; target {action.target}; '
-                    f'successful {action.successful}.'
-                )
+                if self.debug:
+                    print(
+                        f'PrimaryAction: {self.players[action.player_id]}; action '
+                        f'{action.action.name}; target {action.target}; '
+                        f'successful {action.successful}.'
+                    )
             if ActionType.ChallengePrimaryAction in self.history[-1]:
                 action = self.history[-1][ActionType.ChallengePrimaryAction]
-                print(
-                    f'ChallengePrimaryAction: {self.players[action.player_id]}; '
-                    f'action {action.action.name}; successful '
-                    f'{action.successful}.'
-                )
+                if self.debug:
+                    print(
+                        f'ChallengePrimaryAction: {self.players[action.player_id]}; '
+                        f'action {action.action.name}; successful '
+                        f'{action.successful}.'
+                    )
             if ActionType.CounterAction in self.history[-1]:
                 action = self.history[-1][ActionType.CounterAction]
-                print(
-                    f'CounterAction: {self.players[action.player_id]}; action '
-                    f'{action.action.name}; successful {action.successful}.'
-                )
+                if self.debug:
+                    print(
+                        f'CounterAction: {self.players[action.player_id]}; action '
+                        f'{action.action.name}; successful {action.successful}.'
+                    )
             if ActionType.ChallengeCounterAction in self.history[-1]:
                 action = self.history[-1][ActionType.ChallengeCounterAction]
-                print(
-                    f'ChallengeCounterAction: {self.players[action.player_id]}; '
-                    f'action {action.action.name}; successful '
-                    f'{action.successful}.'
-                )
+                if self.debug:
+                    print(
+                        f'ChallengeCounterAction: {self.players[action.player_id]}; '
+                        f'action {action.action.name}; successful '
+                        f'{action.successful}.'
+                    )
 
-            remaining = list(
-                filter(lambda player: not player.eliminated, self.players)
-            )
-            if len(remaining) == 1:
-                print(f'Game over.')
-                print(f'{self.players[remaining[0].player_id]} wins.')
+            # Build eliminated_players list
+            # This is 100% a terrible way to do this but I'm too scared to insert this anywhere else 
+            # without breaking things.
+            for p in self.players:
+                if p.eliminated and p not in self.eliminated_players:
+                    self.eliminated_players.append(p)
 
+            if len(self.surviving_players) == 1:
+                if self.debug:
+                    print(f'Game over.')
+                    print(f'{self.winner} wins.')
                 break
 
             turn += 1
             primary_player_id = self.next_player(primary_player_id)
+
+        self.complete = True
 
     def run_turn_without_primary_resolution(
         self,
@@ -709,3 +740,24 @@ class Engine:
 
         else:
             raise ValueError(f'Unknown PrimaryAction {primary_action}')
+
+
+    @property
+    def surviving_players(self) -> list[Player]:
+        """ The players which are not yet eliminated """
+        return [p for p in self.players if not p.eliminated]
+
+    @property
+    def tied(self) -> bool:
+        """ Returns whether completed game was a tie """
+        if not self.complete:
+            raise Exception("Game is not complete yet!")
+        return len(self.surviving_players) > 1
+
+    @property
+    def winner(self) -> Player:
+        if not self.complete:
+            raise Exception("Game is not complete yet!")
+        if self.tied:
+            raise Exception("Game was a tie")
+        return self.surviving_players[0]
