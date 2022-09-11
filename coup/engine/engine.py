@@ -73,6 +73,7 @@ class Engine:
 
         self.debug:bool = debug
 
+        self.turn:int = 0
         self.complete:bool = False
 
         self.eliminated_players:List[Player] = []
@@ -113,17 +114,17 @@ class Engine:
                 print(p, '-', p.hand)
             print()
 
-        turn = 0
+        self.turn = 0
         primary_player_id = 0
         while True:
-            if turn == Engine.TIMEOUT_TURN:
+            if self.turn == Engine.TIMEOUT_TURN:
                 if self.debug:
-                    print(f"Game timed out after {turn} turns")
+                    print(f"Game timed out after {self.turn} turns")
                     break
                 break
 
             if self.debug:
-                print(f'Turn {turn}.')
+                print(f'Turn {self.turn}.')
                 print("Balances:", [p.balance for p in self.players])
                 print("Card Nums:", [len(p.hand) for p in self.players])
 
@@ -178,13 +179,13 @@ class Engine:
                 if p.eliminated and p not in self.eliminated_players:
                     self.eliminated_players.append(p)
 
-            if len(self.surviving_players) == 1:
+            if len(self.remaining_players) == 1:
                 if self.debug:
                     print(f'Game over.')
                     print(f'{self.winner} wins.')
                 break
 
-            turn += 1
+            self.turn += 1
             primary_player_id = self.next_player(primary_player_id)
 
         self.complete = True
@@ -755,7 +756,7 @@ class Engine:
 
 
     @property
-    def surviving_players(self) -> list[Player]:
+    def remaining_players(self) -> list[Player]:
         """ The players which are not yet eliminated """
         return [p for p in self.players if not p.eliminated]
 
@@ -764,7 +765,7 @@ class Engine:
         """ Returns whether completed game was a tie """
         if not self.complete:
             raise Exception("Game is not complete yet!")
-        return len(self.surviving_players) > 1
+        return len(self.remaining_players) > 1
 
     @property
     def winner(self) -> Player:
@@ -772,4 +773,4 @@ class Engine:
             raise Exception("Game is not complete yet!")
         if self.tied:
             raise Exception("Game was a tie")
-        return self.surviving_players[0]
+        return self.remaining_players[0]
