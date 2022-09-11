@@ -1,13 +1,16 @@
 
-BOT_FILE_NAME = 'other_bot.py'
+# A list of bot files in a dependency topological order
+BOT_FILE_NAMES = [
+    'base_bot.py',
+    'other_bot.py'
+]
 
 FILE_NAMES = [
     'coup/bots/enums.py',
     'coup/bots/action.py',
     'coup/bots/game_info.py',
     'coup/bots/bot_battle.py',
-    'coup/bots/bots/base_bot.py',
-    f'coup/bots/bots/{BOT_FILE_NAME}',
+    *(['coup/bots/bots/'+b for b in BOT_FILE_NAMES]),
     'coup/bots/run.py',
 ]
 OUTPUT = 'submission.py'
