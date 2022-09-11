@@ -1,4 +1,4 @@
-from coup.bots.enums import ChallengeAction, PrimaryAction, CounterAction
+from coup.bots.enums import ChallengeAction, PrimaryAction, CounterAction, RequestedMove
 from coup.bots.game_info import GameInfo
 
 """END LOCAL IMPORTS"""
@@ -18,6 +18,7 @@ class BotBattle:
 
     def play_primary_action(self, primary_action: PrimaryAction, target_player_id: Optional[int] = None):
         dict_move = {
+            'type': RequestedMove.PrimaryAction.name,
             'action': int(primary_action),
             'target': target_player_id
         }
@@ -25,24 +26,28 @@ class BotBattle:
 
     def play_challenge_action(self, challenge_action: ChallengeAction):
         dict_move = {
+            'type': RequestedMove.ChallengeAction.name,
             'action': int(challenge_action)
         }
         self._write_to_pipe(dict_move)
 
     def play_challenge_response(self, card_index: int):
         dict_move = {
+            'type': RequestedMove.ChallengeResponse.name,
             'card_index': card_index
         }
         self._write_to_pipe(dict_move)
 
     def play_counter_action(self, counter_action: CounterAction):
         dict_move = {
+            'type': RequestedMove.CounterAction.name,
             'action': int(counter_action)
         }
         self._write_to_pipe(dict_move)
 
     def play_discard_choice(self, card_index: int):
         dict_move = {
+            'type': RequestedMove.DiscardChoice.name,
             'card_index': card_index
         }
         self._write_to_pipe(dict_move)
