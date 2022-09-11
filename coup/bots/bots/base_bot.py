@@ -5,7 +5,7 @@ from coup.bots.enums import *
 """END LOCAL IMPORTS"""
 
 import json
-from typing import Optional
+from typing import Optional, Type
 
 
 class BaseBot:
@@ -19,21 +19,13 @@ class BaseBot:
     def __str__(self) -> str:
         return self.__class__.__name__
 
-
     def primary_action_handler(self) -> tuple[PrimaryAction, Optional[int]]:
         if self.game_info.current_player.balance >= 7:
             target_player = self.game_info.get_next_alive_player()
             return (PrimaryAction.Coup, target_player.player_id)
 
-        return (PrimaryAction.Income, None)
+        return self.primary_money_handler()
 
-        # elif Character.Duke in self.game_info.own_cards:
-        #     return (PrimaryAction.Tax, None)
-        # elif Character.Assassin in self.game_info.own_cards and self.game_info.current_player.balance >= 3:
-        #     target_player = self.game_info.get_next_alive_player()
-        #     return (PrimaryAction.Assassinate, target_player.player_id)
-        # else:
-        #     return (PrimaryAction.Income, None)
 
     def counter_action_handler(self) -> CounterAction:
         return CounterAction.NoCounterAction
@@ -102,3 +94,13 @@ class BaseBot:
             else:
                 raise Exception(f'Unknown requested move: {requested_move}')
 
+
+    ## Not really truly "base" but whatever
+
+    def primary_money_handler(self) -> tuple[PrimaryAction, Optional[int]]:
+        """
+            A method to determine the bots standard method of getting money.
+
+            By default this just calls Income, although more advanced methods might use ForeignAid or Tax.
+        """
+        return (PrimaryAction.Income, None)
