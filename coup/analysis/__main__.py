@@ -6,6 +6,7 @@ from pathlib import Path
 from coup.engine.engine import Engine
 from coup.bots.bots.base_bot import BaseBot
 from coup.bots.bots.other_bot import OtherBot
+from coup.bots.bots.other_bot_2 import OtherBot2
 from coup.bots.bots.primary_action_bot import PrimaryActionBot
 from coup.bots.bots.foreign_aid_bot import ForeignAidBot
 
@@ -38,6 +39,7 @@ def test_bots(bot_classes, game_count):
         shuffle(player_order)
 
         bot_classes_ordered = [bot_classes[k] for k in player_order]
+        # input()
         engine = Engine(bot_classes_ordered, debug=False)
         engine.run_game()
 
@@ -80,30 +82,37 @@ def test_bots(bot_classes, game_count):
 
 if __name__ == "__main__":
 
-    BOT_CLASSES = [OtherBot, BaseBot, BaseBot, BaseBot, BaseBot]
+    # BOT_CLASSES = [OtherBot, BaseBot, BaseBot, BaseBot, BaseBot]
     # BOT_CLASSES = [BaseBot, BaseBot, BaseBot, BaseBot, BaseBot]
     # BOT_CLASSES = [OtherBot, ForeignAidBot, PrimaryActionBot, BaseBot, BaseBot]
     # BOT_CLASSES = [OtherBot, ForeignAidBot, PrimaryActionBot, BaseBot, BaseBot]
+    BOT_CLASSES = [OtherBot2, OtherBot, OtherBot, OtherBot, OtherBot]
 
-    GAME_COUNT = 1000
+    GAME_COUNT = 10000
 
     df = test_bots(BOT_CLASSES, GAME_COUNT)
     # print(df)
     # df.to_csv(str(Path(__file__).parent) + '/results.csv')
 
     # Dataframe with one row per game 
-    df_game_group = df[["game_num", "turns", "tie"]].drop_duplicates().reset_index(drop=True)
-    print(df_game_group)
+    df_game = df[["game_num", "turns", "tie"]].drop_duplicates().reset_index(drop=True)
+    print(df_game)
     
-    tie_count = df_game_group["tie"].sum()
+    tie_count = df_game["tie"].sum()
+    print(f"Regular games: {GAME_COUNT - tie_count}")
     print(f"Ties: {tie_count}")
-    print(f"Full games: {GAME_COUNT - tie_count}")
+
+    df_game_regular = df_game[~df_game['tie']]  # Games without ties
+    print(f"Average game length (without ties): {df_game_regular['turns'].mean():.2f} turns")
 
     # Prints the number of times each bot won
     print("\nWinning bots cumulative")
     df_winner = df[df["game_rank"] == 0]
     # print(df_winner.groupby(["bot_num", "bot_name"]).())
     print(df_winner.value_counts(["bot_num", "bot_name"]))
+
+    # NOTE: Only regular game win percentage
+    print(df_winner.value_counts(["bot_num", "bot_name"]) / (GAME_COUNT - tie_count))
 
     # Bot num VS game rank
     print("\nbot_num VS game_rank")

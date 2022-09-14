@@ -1,4 +1,5 @@
 from coup.bots.enums import *
+from coup.common.rules import *
 
 """END LOCAL IMPORTS"""
 
