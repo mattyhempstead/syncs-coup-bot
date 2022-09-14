@@ -1,5 +1,7 @@
 from coup.bots.enums import *
 from coup.bots.action import Action
+from coup.common.rules import *
+
 
 """END LOCAL IMPORTS"""
 
@@ -22,6 +24,9 @@ class Player:
     @property
     def dead(self) -> bool:
         return self.card_num == 0
+
+    def __repr__(self) -> str:
+        return f"<Player id={self.player_id}, bal={self.balance}, cn={self.card_num}>"
 
 
 class GameInfo:
@@ -107,6 +112,17 @@ class GameInfo:
             current_primary_player_id=current_primary_player_id,
         )
 
+
+    @property
+    def turn(self) -> int:
+        """ The turn number starting at 0 """
+        # A history of length 1 implies the first turn of the game.
+        return len(self.history)-1
+
+    @property
+    def remaining_players(self) -> int:
+        return len([p for p in self.players if not p.is_current and p.alive])
+
     def get_next_alive_player(self) -> Player:
         next_alive = (self.player_id + 1) % 5
         while self.players_cards_num[next_alive] == 0:
@@ -162,7 +178,12 @@ class GameInfo:
         return action
 
 
-    def exists_historical_counter(self, counter_action_type:CounterAction, player_id:Optional[int]=None) -> bool:
+    def exists_historical_counter(
+        self,
+        counter_action_type:CounterAction,
+        player_id:Optional[int]=None,
+        alive:bool=False,  # whether we exclude players that are eliminated
+    ) -> bool:
         """
             Returns whether a specific CounterAction type has been successfully applied in the past.
             (Not including counters that we applied).
@@ -187,6 +208,9 @@ class GameInfo:
             # Skip if not specified target player
             if player_id is not None and counter_action.player_id != player_id: continue
 
+            # Exclude counters from eliminated players
+            if alive and self.players[counter_action.player_id].dead: continue
+
             return True
         
         return False
@@ -203,5 +227,68 @@ class GameInfo:
             return 0
 
 
-    # def get_winning_player_without_counter(self, counter_action_type:CounterAction) -> Player:
-    #     pass
+    def get_winning_player_without_counter(self, counter_action_type:CounterAction) -> Optional[Player]:
+        """
+            Return a list of players in order of winningness who have not historically performed a
+            particular counter.
+
+            This is not entirely accurate since we should really be ignoring people that have done
+            the counteraction but then proceeded to do an exchange or give that card up in a challenge.
+        """
+        winner_players = self.get_winning_player_order()
+        winner_players_without_counter = list(filter(
+            lambda p: not self.exists_historical_counter(counter_action_type, p.player_id),
+            winner_players
+        ))
+
+        # If all alive players have countered return None
+        # This will often be true especially in endgame
+        if len(winner_players_without_counter) == 0:
+            return None
+
+        return winner_players_without_counter[0]
+
+
+
+    @property
+    def known_cards(self) -> dict[Character, int]:
+        """
+            A dict counting all the known cards.
+
+            This is currently based on the revealed_cards dict and own_cards.
+            Could additionally have temp values based on recent exchanges or challenges.    
+
+            Also, if we decide certain players are being honest with heuristics, we can 
+            accumulate more predictions of what cards are held in other players hands
+            and cross reference with the player performing the action. Of course we can't
+            be certain but as long as the alternative of not making any assumptions is 
+            statistically worse we might as well make the heuristic.
+        """
+        known_cards = self.revealed_cards.copy()
+        for c in self.own_cards:
+            if c not in known_cards:
+                known_cards[c] = 0
+            known_cards[c] += 1
+        return known_cards
+
+
+    def is_lying(self):
+        """ Return true if most recent move is definitely lying (whether a primary or counter) """
+        h = self.history[-1]
+
+        if ActionType.CounterAction in h:
+            action = h[ActionType.CounterAction]
+            action_card = COUNTER_ACTION_TO_CARD[action.action]
+        elif ActionType.PrimaryAction in h:
+            action = h[ActionType.PrimaryAction]
+            action_card = PRIMARY_ACTION_TO_CARD[action.action]
+
+        if action.player_id == self.current_player.player_id:
+            raise Exception("We made the move???")
+
+        # Check known cards to determine whether they are certainly lying
+        known_cards = self.known_cards
+        if action_card in known_cards and known_cards[action_card] == 3:
+            return True
+
+        return False
