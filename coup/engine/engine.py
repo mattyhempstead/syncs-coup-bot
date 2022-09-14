@@ -18,7 +18,9 @@ from coup.engine.player import Player
 
 
 class Engine:
-    TIMEOUT_TURN:int = 100  # Number of turns until we timeout the engine
+
+    TIMEOUT_TURN:int = 200  # I've seen a 154 once (can prob go a bit higher)
+    """ Number of turns until we timeout the engine """
 
     def __init__(
         self,
@@ -182,7 +184,7 @@ class Engine:
             if len(self.remaining_players) == 1:
                 if self.debug:
                     print(f'Game over.')
-                    print(f'{self.winner} wins.')
+                    print(f'{self.remaining_players[0]} wins.')
                 break
 
             self.turn += 1
@@ -558,10 +560,11 @@ class Engine:
         player = self.players[player_id]
 
         if len(player.hand) == 0:
-            print(
-                'WARNING: run_influence_loss on a player with no cards. Doing '
-                'nothing. I believe this is correct behaviour.'
-            )
+            # print(
+            #     'WARNING: run_influence_loss on a player with no cards. Doing '
+            #     'nothing. I believe this is correct behaviour.'
+            # )
+            return
 
         revealed_card = self.run_discard(
             player_id=player_id,
