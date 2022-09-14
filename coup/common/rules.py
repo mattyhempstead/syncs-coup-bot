@@ -1,6 +1,8 @@
-from typing import Optional
-
 from coup.bots.enums import Character, PrimaryAction, CounterAction
+
+"""END LOCAL IMPORTS"""
+
+from typing import Optional
 
 
 NUMBER_OF_PLAYERS = 5
@@ -16,8 +18,8 @@ PRIMARY_ACTION_TO_CARD: dict[PrimaryAction, Character] = {
 
 COUNTER_ACTION_TO_CARD: dict[CounterAction, Character] = {
     CounterAction.BlockForeignAid: Character.Duke,
-    CounterAction.BlockStealingAsCaptain: Character.Ambassador,
-    CounterAction.BlockStealingAsAmbassador: Character.Captain,
+    CounterAction.BlockStealingAsCaptain: Character.Captain,
+    CounterAction.BlockStealingAsAmbassador: Character.Ambassador,
     CounterAction.BlockAssassination: Character.Contessa,
 }
 
