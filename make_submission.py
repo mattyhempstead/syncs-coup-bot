@@ -7,6 +7,7 @@ BOT_FILE_NAMES = [
 
 FILE_NAMES = [
     'coup/bots/enums.py',
+    'coup/common/rules.py',
     'coup/bots/action.py',
     'coup/bots/game_info.py',
     'coup/bots/bot_battle.py',
