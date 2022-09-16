@@ -18,15 +18,14 @@ from coup.engine.player import Player
 
 
 class Engine:
-
-    TIMEOUT_TURN:int = 200  # I've seen a 154 once (can prob go a bit higher)
-    """ Number of turns until we timeout the engine """
+    # The number of turns before an Engine timeout.
+    TIMEOUT_TURN: int = 200  # I've seen a 154 once (can prob go a bit higher)
 
     def __init__(
         self,
         bot_classes: list[Type[BaseBot]],
-        debug:bool=True,
-        shuffle_players: bool=False
+        debug: int = True,
+        shuffle_players: int = False,
     ) -> None:
         if len(bot_classes) != NUMBER_OF_PLAYERS:
             raise ValueError(
@@ -43,7 +42,6 @@ class Engine:
         )
         shuffle(self.deck)
 
-
         self.players: list[Player] = []
 
         if shuffle_players:
@@ -59,7 +57,6 @@ class Engine:
                 )
             )
 
-
         self.revealed_cards: dict[Character, int] = {
             Character.Duke: 0,
             Character.Assassin: 0,
@@ -69,7 +66,6 @@ class Engine:
         }
 
         self.history: list[dict[ActionType, Action]] = []
-
 
         # Sorry James, my usage of various class variables and methods is probably quite disagreeable
 
@@ -108,7 +104,6 @@ class Engine:
         return self.deck.pop()
 
     def run_game(self) -> None:
-        
         # Print some stuff about the game
         if self.debug:
             print("Cards dealt:")

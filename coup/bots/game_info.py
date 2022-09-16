@@ -10,12 +10,18 @@ from dataclasses import dataclass
 
 
 class Player:
-    def __init__(self, player_id, balance, card_num, is_current):
-        self.player_id:int = player_id
-        self.balance:int = balance
-        self.card_num:int = card_num
+    def __init__(
+        self,
+        player_id: int,
+        balance: int,
+        card_num: int,
+        is_current: bool
+    ):
+        self.player_id = player_id
+        self.balance = balance
+        self.card_num = card_num
 
-        self.is_current:bool = is_current
+        self.is_current = is_current
 
     @property
     def alive(self) -> bool:
