@@ -5,5 +5,5 @@ from coup.tree.game_tree_node import (
 """END LOCAL IMPORTS"""
 
 
-class ChallengeNode(NonPrimaryGameTreeNode, MultipleDeciderNode):
+class CounterActionPlayerNode(NonPrimaryGameTreeNode, MultipleDeciderNode):
     pass

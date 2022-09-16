@@ -1,4 +1,4 @@
-from coup.tree.game_tree_node import GameTreeNode
+from coup.tree.game_tree_node import GameTreeNode, DeciderNode
 from coup.tree.challenge_node import ChallengeNode
 from coup.bots.game_info import Player
 from coup.bots.enums import Character
@@ -6,7 +6,7 @@ from coup.bots.enums import Character
 """END LOCAL IMPORTS"""
 
 
-class PrimaryActionNode(GameTreeNode):
+class PrimaryActionNode(GameTreeNode, DeciderNode):
     def generate_children(
         self,
         to_depth: int,

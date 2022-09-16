@@ -7,14 +7,15 @@ from coup.common.rules import NUMBER_OF_PLAYERS
 
 
 def make_game_root(
-    hand: list[Character]
+    perspective_player_id: int,
+    perspective_player_hand: list[Character],
 ) -> PrimaryActionNode:
     """
-    Creates the root node of a game for a player starting with the given id,
-    and with the given hand.
+    Creates the root node of a game tree from the perspective of the player
+    with the given id and the given hand.
     """
 
-    if len(hand) != 2:
+    if len(perspective_player_hand) != 2:
         raise ValueError('Expected a hand of two cards.')
 
     players: list[Player] = []
@@ -30,5 +31,6 @@ def make_game_root(
         players=players,
         revealed_cards={},
         primary_player_id=0,
-        hand=hand
+        perspective_player_id=perspective_player_id,
+        perspective_hand=perspective_player_hand,
     )
