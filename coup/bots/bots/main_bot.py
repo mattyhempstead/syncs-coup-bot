@@ -33,10 +33,17 @@ class MainBot(BaseBot):
 
             # target_player = self.game_info.get_richest_player()
 
-            if random.random() < 0.5:
-                target_player = self.game_info.get_winning_player()
-            else:
-                target_player = self.game_info.get_richest_player()
+
+            prev_player = self.game_info.get_prev_alive_player()
+            if prev_player.balance >= 7:
+                return (PrimaryAction.Coup, prev_player.player_id)
+
+            target_player = self.game_info.get_winning_player()
+
+            # if random.random() < 0.5:
+            #     target_player = self.game_info.get_winning_player()
+            # else:
+            #     target_player = self.game_info.get_richest_player()
 
 
             # target_player = self.game_info.get_richest_player()
@@ -47,7 +54,7 @@ class MainBot(BaseBot):
         # NOTE: This is good. Often prev player is who coups us so we should try to stop them at our own risk.
 
         prev_player = self.game_info.get_prev_alive_player()
-        if prev_player.balance == 9 and self.game_info.current_player.balance >= 3:
+        if prev_player.balance >= 9 and self.game_info.current_player.balance >= 3:
             return (PrimaryAction.Assassinate, prev_player.player_id)
 
 
@@ -85,13 +92,18 @@ class MainBot(BaseBot):
             # if richest_player.balance >= 7 and not richest_player.has_blocked(CounterAction.BlockAssassination):
             #     return (PrimaryAction.Assassinate, richest_player.player_id)
 
+            # for p in self.game_info.remaining_players_richest:
+            for p in self.game_info.remaining_players_winning:
+                if p.has_blocked(CounterAction.BlockAssassination): continue
+
+                return (PrimaryAction.Assassinate, p.player_id)
 
 
             # Avoiding players who historically block is important, obviously
             # Idk whether to start applying this stuff now or waiting until the deadline approaches
-            target_player = self.game_info.get_winning_player_without_counter(CounterAction.BlockAssassination)
-            if target_player is not None:
-                return (PrimaryAction.Assassinate, target_player.player_id)
+            # target_player = self.game_info.get_winning_player_without_counter(CounterAction.BlockAssassination)
+            # if target_player is not None:
+            #     return (PrimaryAction.Assassinate, target_player.player_id)
 
 
         if Character.Duke in self.game_info.own_cards:
