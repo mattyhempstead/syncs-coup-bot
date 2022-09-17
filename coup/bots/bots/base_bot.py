@@ -104,3 +104,11 @@ class BaseBot:
             By default this just calls Income, although more advanced methods might use ForeignAid or Tax.
         """
         return (PrimaryAction.Income, None)
+
+
+    @classmethod
+    def as_name(cls, name: str) -> "BaseBot":
+        class TempBot(cls):
+            pass
+        TempBot.__name__ = name
+        return TempBot

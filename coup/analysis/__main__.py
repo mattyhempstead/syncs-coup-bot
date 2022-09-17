@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
-from random import shuffle
+import random
 from pathlib import Path
+from typing import List
 
 from coup.engine.engine import Engine
 from coup.bots.bots.base_bot import BaseBot
@@ -11,32 +12,43 @@ from coup.bots.bots.primary_action_bot import PrimaryActionBot
 from coup.bots.bots.foreign_aid_bot import ForeignAidBot
 
 
-def test_bots(bot_classes, game_count):
+
+
+def select_bots(bot_main:BaseBot, bot_pool:list[BaseBot]) -> List[BaseBot]:
+    """ Selects main bot and 4 random choice bots from a pool """
+    bot_classes = [bot_main]
+    bot_classes += random.sample(bot_pool, 4)
+    return bot_classes
+
+
+def test_bots(game_count:int, bot_main:BaseBot, bot_pool:list[BaseBot]) -> pd.DataFrame:
     """
-        Plays games on bots.
+        Plays games on bots and returns a DataFrame of game results for analysis.
     """
 
+
+
     print(f"Playing {game_count} games...")
-    for i,b in enumerate(bot_classes):
-        print(f"bot{i} = {b}")
+    # for i,b in enumerate(bot_classes):
+    #     print(f"bot{i} = {b}")
     print()
 
     results = {
         "game_num": [],     # Game number (index from 0)
         "turns": [],        # Number of turns in game
         "tie": [],          # Whether or not game was a tie
-        "bot_num": [],      # Index of bot as provided in bot_classes
         "bot_name": [],     # Name of bot class (cls.__name__)
         "table_pos": [],    # Table position of bot in game
         "game_rank": []     # Final rank of bot in game (-1 if tie)
     }
 
-    player_order = list(range(len(bot_classes)))
+    player_order = list(range(5))
 
     for g in range(game_count):
         print(f"Game {g}/{GAME_COUNT}", end="\r")
 
-        shuffle(player_order)
+        bot_classes = select_bots(bot_main, bot_pool)
+        random.shuffle(player_order)
 
         bot_classes_ordered = [bot_classes[k] for k in player_order]
         # input()
@@ -64,7 +76,6 @@ def test_bots(bot_classes, game_count):
             results["turns"].append(engine.turn)
             results["tie"].append(engine.tied)
 
-            results["bot_num"].append(i)
             results["bot_name"].append(b.__name__)
 
             results["table_pos"].append(player_order.index(i))
@@ -82,17 +93,29 @@ def test_bots(bot_classes, game_count):
 
 if __name__ == "__main__":
 
-    # BOT_CLASSES = [OtherBot, BaseBot, BaseBot, BaseBot, BaseBot]
-    # BOT_CLASSES = [BaseBot, BaseBot, BaseBot, BaseBot, BaseBot]
-    # BOT_CLASSES = [OtherBot, ForeignAidBot, PrimaryActionBot, BaseBot, BaseBot]
-    # BOT_CLASSES = [OtherBot, ForeignAidBot, PrimaryActionBot, BaseBot, BaseBot]
-    BOT_CLASSES = [OtherBot2, OtherBot, OtherBot, OtherBot, OtherBot]
+    GAME_COUNT = 1000
+    
+    # The bot we are testing
+    # This will be included in all games as bot_num 0
+    BOT_MAIN = OtherBot2
 
-    GAME_COUNT = 10000
+    # A collection of bots that are selected from.
+    # This should NOT include the bot we are testing if we always want it selected.
+    BOT_POOL = [
+        OtherBot.as_name("test1"),
+        OtherBot,
+        OtherBot,
+        OtherBot,
+        OtherBot,
+        OtherBot,
+        OtherBot,
+    ]
 
-    df = test_bots(BOT_CLASSES, GAME_COUNT)
+
+
+    df = test_bots(GAME_COUNT, BOT_MAIN, BOT_POOL)
     # print(df)
-    # df.to_csv(str(Path(__file__).parent) + '/results.csv')
+    df.to_csv(str(Path(__file__).parent) + '/results.csv')
 
     # Dataframe with one row per game 
     df_game = df[["game_num", "turns", "tie"]].drop_duplicates().reset_index(drop=True)
@@ -109,21 +132,20 @@ if __name__ == "__main__":
     print("\nWinning bots cumulative")
     df_winner = df[df["game_rank"] == 0]
     # print(df_winner.groupby(["bot_num", "bot_name"]).())
-    print(df_winner.value_counts(["bot_num", "bot_name"]))
+    print(df_winner.value_counts(["bot_name"]))
 
     # NOTE: Only regular game win percentage
-    print(df_winner.value_counts(["bot_num", "bot_name"]) / (GAME_COUNT - tie_count))
+    print()
+    print(df_winner.value_counts(["bot_name"]) / (GAME_COUNT - tie_count))
 
     # Bot num VS game rank
     print("\nbot_num VS game_rank")
-    bot_results = pd.crosstab(df["bot_num"], df["game_rank"])
+    bot_results = pd.crosstab(df["bot_name"], df["game_rank"])
     print(bot_results)
     print(bot_results / GAME_COUNT)
 
     # Bot0 table position VS game rank
-    print("\nbot0 table_pos VS game_rank")
-    print(BOT_CLASSES[0])
-    df_bot0 = df[df["bot_num"] == 0]
+    print(f"\n{BOT_MAIN.__name__} table_pos VS game_rank")
+    df_bot0 = df[df["bot_name"] == BOT_MAIN.__name__]
     bot0_results = pd.crosstab(df_bot0["game_rank"], df_bot0["table_pos"])
     print(bot0_results)
-
