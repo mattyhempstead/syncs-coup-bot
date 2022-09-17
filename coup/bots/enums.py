@@ -8,8 +8,9 @@ class Character(IntEnum):
     Captain = 4
     Contessa = 5
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<C_{self.name}>"
+
 
 class ActionType(IntEnum):
     PrimaryAction = 1
