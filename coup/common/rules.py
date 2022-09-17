@@ -2,10 +2,10 @@ from coup.bots.enums import Character, PrimaryAction, CounterAction
 
 """END LOCAL IMPORTS"""
 
-from typing import Optional
-
 
 NUMBER_OF_PLAYERS = 5
+NUMBER_OF_EACH_CARD_IN_DECK = 3
+SIZE_OF_DECK = NUMBER_OF_EACH_CARD_IN_DECK * len(Character)
 
 
 PRIMARY_ACTION_TO_CARD: dict[PrimaryAction, Character] = {
@@ -46,4 +46,15 @@ PRIMARY_ACTION_TO_COUNTER_ACTIONS: dict[PrimaryAction, set[CounterAction]] = {
         CounterAction.BlockStealingAsAmbassador,
         CounterAction.BlockStealingAsCaptain
     },
+}
+
+
+PRIMARY_ACTION_HAS_TARGET: dict[PrimaryAction, bool] = {
+    PrimaryAction.Income: False,
+    PrimaryAction.ForeignAid: False,
+    PrimaryAction.Coup: True,
+    PrimaryAction.Tax: False,
+    PrimaryAction.Assassinate: True,
+    PrimaryAction.Exchange: False,
+    PrimaryAction.Steal: True,
 }
