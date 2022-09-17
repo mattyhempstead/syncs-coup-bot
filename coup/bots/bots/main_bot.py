@@ -44,14 +44,20 @@ class MainBot(BaseBot):
             return (PrimaryAction.Coup, target_player.player_id)
 
 
+        # NOTE: This is good. Often prev player is who coups us so we should try to stop them at our own risk.
+
+        prev_player = self.game_info.get_prev_alive_player()
+        if prev_player.balance == 9 and self.game_info.current_player.balance >= 3:
+            return (PrimaryAction.Assassinate, prev_player.player_id)
+
+
+        prev_player = self.game_info.get_prev_alive_player()
+        if prev_player.balance >= 7:
+            return (PrimaryAction.Steal, prev_player.player_id)
+
 
         # if Character.Ambassador in self.game_info.own_cards and self.game_info.turn > 4:
         #     return (PrimaryAction.Exchange, None)
-
-
-        # if Character.Ambassador in self.game_info.own_cards and self.game_info.turn < 4:
-        #     return (PrimaryAction.Exchange, None)
-
 
         # if self.game_info.current_player.balance == 6 and Character.Duke not in self.game_info.own_cards:
         #     return (PrimaryAction.Income, None)
@@ -61,16 +67,13 @@ class MainBot(BaseBot):
         #     return (PrimaryAction.Tax, None)
 
 
-        # NOTE: This is good. Often prev player is who coups us so we should try to stop them at our own risk.
-        prev_player = self.game_info.get_prev_alive_player()
-        if prev_player.balance >= 7:
-            return (PrimaryAction.Steal, prev_player.player_id)
 
         # if self.game_info.current_player.balance >= 3 and prev_player.balance >= 7:
             # return (PrimaryAction.Assassinate, prev_player.player_id)
             # if not prev_player.has_blocked(CounterAction.BlockAssassination):
             # if not prev_player.has_blocked(CounterAction.BlockAssassination, check_challenge=True):
             #     return (PrimaryAction.Assassinate, prev_player.player_id)
+
 
 
 
@@ -129,6 +132,15 @@ class MainBot(BaseBot):
             #     return (PrimaryAction.Steal, richest_player.player_id)
 
 
+
+        # if Character.Ambassador in self.game_info.own_cards:
+        #     if Character.Contessa in self.game_info.own_cards:
+        #         #self.game_info.turn < 8:
+        #         return (PrimaryAction.Exchange, None)
+
+
+        # if Character.Ambassador in self.game_info.own_cards and self.game_info.turn < 8:
+        #     return (PrimaryAction.Exchange, None)
 
 
 
