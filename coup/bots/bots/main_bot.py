@@ -7,7 +7,10 @@ from typing import Optional
 import random
 
 
-class OtherBot2(BaseBot):
+class MainBot(BaseBot):
+    """
+        Our main submission bot.
+    """
     def primary_action_handler(self) -> tuple[PrimaryAction, Optional[int]]:
 
         # We must coup if we can afford it (technically if >=10)
@@ -115,6 +118,10 @@ class OtherBot2(BaseBot):
 
     def counter_action_handler(self) -> CounterAction:
         action = self.game_info.get_history_primary_action()
+
+
+        # if action.action == PrimaryAction.Assassinate:
+            # return CounterAction.BlockAssassination
 
         # Pretending to block            
         # if action.action == PrimaryAction.ForeignAid:

@@ -6,10 +6,6 @@ from typing import List
 
 from coup.engine.engine import Engine
 from coup.bots.bots.base_bot import BaseBot
-from coup.bots.bots.other_bot import OtherBot
-from coup.bots.bots.other_bot_2 import OtherBot2
-from coup.bots.bots.primary_action_bot import PrimaryActionBot
-from coup.bots.bots.foreign_aid_bot import ForeignAidBot
 
 from coup.bots.bots.examples.ambassador import ExampleAmbassador
 from coup.bots.bots.examples.assassin import ExampleAssassin
@@ -18,6 +14,12 @@ from coup.bots.bots.examples.counter import ExampleCounter
 from coup.bots.bots.examples.foreign_counter import ExampleForeignCounter
 from coup.bots.bots.examples.simple import ExampleSimple
 from coup.bots.bots.examples.submission_template import ExampleSubmissionTemplate
+
+from coup.bots.bots.main_bot import MainBot
+from coup.bots.bots.opponent_bot import OpponentBot
+
+from coup.bots.bots.primary_action_bot import PrimaryActionBot
+from coup.bots.bots.foreign_aid_bot import ForeignAidBot
 
 
 
@@ -100,11 +102,11 @@ def test_bots(game_count:int, bot_main:BaseBot, bot_pool:list[BaseBot]) -> pd.Da
 
 if __name__ == "__main__":
 
-    GAME_COUNT = 1000
+    GAME_COUNT = 10000
     
     # The bot we are testing
     # This will be included in all games as bot_num 0
-    BOT_MAIN = OtherBot2
+    BOT_MAIN = MainBot
 
     # A collection of bots that are selected from.
     # This should NOT include the bot we are testing if we always want it selected.
@@ -119,22 +121,23 @@ if __name__ == "__main__":
         ExampleSubmissionTemplate,
 
         # Current leaderboard has 14 other players (not including us)
-        OtherBot.as_name("OtherBot_0"),
-        OtherBot.as_name("OtherBot_1"),
-        OtherBot.as_name("OtherBot_2"),
-        OtherBot.as_name("OtherBot_3"),
-        OtherBot.as_name("OtherBot_4"),
-        OtherBot.as_name("OtherBot_5"),
-        OtherBot.as_name("OtherBot_6"),
-        OtherBot.as_name("OtherBot_7"),
-        OtherBot.as_name("OtherBot_8"),
-        OtherBot.as_name("OtherBot_9"),
-        OtherBot.as_name("OtherBot_10"),
-        OtherBot.as_name("OtherBot_11"),
-        OtherBot.as_name("OtherBot_12"),
-        OtherBot.as_name("OtherBot_13"),
+        # OpponentBot.as_name("OpponentBot_0"),
+        # OpponentBot.as_name("OpponentBot_1"),
+        # OpponentBot.as_name("OpponentBot_2"),
+        # OpponentBot.as_name("OpponentBot_3"),
+        # OpponentBot.as_name("OpponentBot_4"),
+        # OpponentBot.as_name("OpponentBot_5"),
+        # OpponentBot.as_name("OpponentBot_6"),
+        # OpponentBot.as_name("OpponentBot_7"),
+        # OpponentBot.as_name("OpponentBot_8"),
+        # OpponentBot.as_name("OpponentBot_9"),
+        # OpponentBot.as_name("OpponentBot_10"),
+        # OpponentBot.as_name("OpponentBot_11"),
+        # OpponentBot.as_name("OpponentBot_12"),
+        # OpponentBot.as_name("OpponentBot_13"),
     ]
-
+    for i in range(14):
+        BOT_POOL.append(OpponentBot)
 
 
     df = test_bots(GAME_COUNT, BOT_MAIN, BOT_POOL)
@@ -152,15 +155,6 @@ if __name__ == "__main__":
     df_game_regular = df_game[~df_game['tie']]  # Games without ties
     print(f"Average game length (without ties): {df_game_regular['turns'].mean():.2f} turns")
 
-    # Prints the number of times each bot won
-    print("\nWinning bots cumulative")
-    df_winner = df[df["game_rank"] == 0]
-    # print(df_winner.groupby(["bot_num", "bot_name"]).())
-    print(df_winner.value_counts(["bot_name"]))
-
-    # NOTE: Only regular game win percentage
-    print()
-    print(df_winner.value_counts(["bot_name"]) / (GAME_COUNT - tie_count))
 
     # Bot num VS game rank
     print("\nbot_num VS game_rank")
@@ -173,3 +167,14 @@ if __name__ == "__main__":
     df_bot0 = df[df["bot_name"] == BOT_MAIN.__name__]
     bot0_results = pd.crosstab(df_bot0["game_rank"], df_bot0["table_pos"])
     print(bot0_results)
+
+
+    # Prints the number of times each bot won
+    print("\nWinning bots cumulative")
+    df_winner = df[df["game_rank"] == 0]
+    # print(df_winner.groupby(["bot_num", "bot_name"]).())
+    print(df_winner.value_counts(["bot_name"]))
+
+    # NOTE: Only regular game win percentage
+    print()
+    print(df_winner.value_counts(["bot_name"]) / (GAME_COUNT - tie_count))
