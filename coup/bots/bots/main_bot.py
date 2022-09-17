@@ -31,6 +31,7 @@ class MainBot(BaseBot):
             # if richest_player.balance >= 7:
             #     return (PrimaryAction.Coup, richest_player.player_id)
 
+            # target_player = self.game_info.get_richest_player()
 
             if random.random() < 0.5:
                 target_player = self.game_info.get_winning_player()
@@ -41,6 +42,11 @@ class MainBot(BaseBot):
             # target_player = self.game_info.get_richest_player()
             # target_player = self.game_info.get_winning_player()
             return (PrimaryAction.Coup, target_player.player_id)
+
+
+
+        # if Character.Ambassador in self.game_info.own_cards and self.game_info.turn > 4:
+        #     return (PrimaryAction.Exchange, None)
 
 
         # if Character.Ambassador in self.game_info.own_cards and self.game_info.turn < 4:
@@ -55,16 +61,39 @@ class MainBot(BaseBot):
         #     return (PrimaryAction.Tax, None)
 
 
+        # NOTE: This is good. Often prev player is who coups us so we should try to stop them at our own risk.
+        prev_player = self.game_info.get_prev_alive_player()
+        if prev_player.balance >= 7:
+            return (PrimaryAction.Steal, prev_player.player_id)
+
+        # if self.game_info.current_player.balance >= 3 and prev_player.balance >= 7:
+            # return (PrimaryAction.Assassinate, prev_player.player_id)
+            # if not prev_player.has_blocked(CounterAction.BlockAssassination):
+            # if not prev_player.has_blocked(CounterAction.BlockAssassination, check_challenge=True):
+            #     return (PrimaryAction.Assassinate, prev_player.player_id)
+
+
+
         # if self.game_info.current_player.balance >= 3:
         if Character.Assassin in self.game_info.own_cards and self.game_info.current_player.balance >= 3:
+
+
+            # richest_player = self.game_info.get_richest_player()
+            # if richest_player.balance >= 7 and not richest_player.has_blocked(CounterAction.BlockAssassination):
+            #     return (PrimaryAction.Assassinate, richest_player.player_id)
+
+
+
             # Avoiding players who historically block is important, obviously
             # Idk whether to start applying this stuff now or waiting until the deadline approaches
             target_player = self.game_info.get_winning_player_without_counter(CounterAction.BlockAssassination)
             if target_player is not None:
                 return (PrimaryAction.Assassinate, target_player.player_id)
 
+
         if Character.Duke in self.game_info.own_cards:
             return (PrimaryAction.Tax, None)
+
 
         if Character.Captain in self.game_info.own_cards:
 
@@ -72,11 +101,17 @@ class MainBot(BaseBot):
             # if target_player is not None and target_player.balance >= 5:
             #     return (PrimaryAction.Steal, target_player.player_id)
 
-            richest_player = self.game_info.get_richest_player()  # >=5 is best?
 
-            # Steal if we can get 2 coins
-            if richest_player.balance >= 5:
-                return (PrimaryAction.Steal, richest_player.player_id)
+            # print(self.game_info.remaining_players_winning)
+            # input()
+
+
+            # for p in self.game_info.remaining_players_richest:
+            for p in self.game_info.remaining_players_winning:
+                if p.balance < 5: continue
+                if p.has_blocked_steal(): continue
+
+                return (PrimaryAction.Steal, p.player_id)
 
 
             # Maybe steal from people with >=3 who have successfully assassinated a player in the past
@@ -87,7 +122,11 @@ class MainBot(BaseBot):
             #     return (PrimaryAction.Steal, richest_player.player_id)
 
 
+            # richest_player = self.game_info.get_richest_player()  # >=5 is best?
 
+            # # Steal if we can get 2 coins
+            # if richest_player.balance >= 5:
+            #     return (PrimaryAction.Steal, richest_player.player_id)
 
 
 
@@ -106,10 +145,18 @@ class MainBot(BaseBot):
         #     return (PrimaryAction.Tax, None)
         # return (PrimaryAction.Tax, None)
 
+        # if self.game_info.turn == 0:
+        #     return (PrimaryAction.Tax, None)
+
+        # if self.game_info.turn >= 30:
+        #     return (PrimaryAction.Tax, None)
+
 
         # Get $2 from Foreign Aid if nobody alive has historically countered it
         if not self.game_info.exists_historical_counter(CounterAction.BlockForeignAid, alive=True):
             return (PrimaryAction.ForeignAid, None)
+
+        # return (PrimaryAction.Tax, None)
 
         # If all else fails get $1 from Income by default
         return (PrimaryAction.Income, None)
@@ -119,13 +166,8 @@ class MainBot(BaseBot):
     def counter_action_handler(self) -> CounterAction:
         action = self.game_info.get_history_primary_action()
 
-
-        # if action.action == PrimaryAction.Assassinate:
-            # return CounterAction.BlockAssassination
-
-        # Pretending to block            
-        # if action.action == PrimaryAction.ForeignAid:
-        #     return CounterAction.BlockForeignAid
+        # We should prioritize honest blocks first
+        # This matters for stuff like Captain VS Ambassador
 
         # Block foreign aid if we can
         if Character.Duke in self.game_info.own_cards:
@@ -146,6 +188,18 @@ class MainBot(BaseBot):
         if Character.Ambassador in self.game_info.own_cards:
             if action.action == PrimaryAction.Steal:
                 return CounterAction.BlockStealingAsAmbassador
+
+
+        # Pretending to block            
+        # if action.action == PrimaryAction.ForeignAid:
+        #     return CounterAction.BlockForeignAid
+
+
+        if action.action == PrimaryAction.Steal:
+            return CounterAction.BlockStealingAsCaptain
+
+        if action.action == PrimaryAction.Assassinate:
+            return CounterAction.BlockAssassination
 
 
         # Fake block assassination with Contessa if we will certainly lose otherwise
@@ -211,6 +265,10 @@ class MainBot(BaseBot):
             # Reveal Assassin if we are challenged for Assassinating
             if action.action == PrimaryAction.Assassinate and Character.Assassin in self.game_info.own_cards:
                 return self.game_info.get_character_location(Character.Assassin)
+
+            # Reveal Ambassador if we are challenged for Exchanging
+            if action.action == PrimaryAction.Exchange and Character.Ambassador in self.game_info.own_cards:
+                return self.game_info.get_character_location(Character.Ambassador)
 
         return 0
 

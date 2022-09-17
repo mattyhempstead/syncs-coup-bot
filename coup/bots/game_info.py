@@ -15,13 +15,16 @@ class Player:
         player_id: int,
         balance: int,
         card_num: int,
-        is_current: bool
+        is_current: bool,
+        game_info: "GameInfo",
     ):
         self.player_id = player_id
         self.balance = balance
         self.card_num = card_num
 
         self.is_current = is_current
+
+        self.game_info = game_info
 
     @property
     def alive(self) -> bool:
@@ -32,7 +35,63 @@ class Player:
         return self.card_num == 0
 
     def __repr__(self) -> str:
-        return f"<Player id={self.player_id}, bal={self.balance}, cn={self.card_num}>"
+        return f"<Plyr id={self.player_id} bal={self.balance} \
+cn={self.card_num} k={self.kill_count} blk_s={self.has_blocked_steal()}>"
+
+
+    def has_blocked(self, counter_action_type:CounterAction, check_challenge:bool=False) -> bool:
+        """
+            Returns whether the player has historically performed a given counter action.
+        """
+        for h in self.game_info.history[:-1]:
+            # Skip if no counteraction
+            if ActionType.CounterAction not in h: continue
+            counter_action = h[ActionType.CounterAction]
+
+            # Skip if wrong type
+            if counter_action.action != counter_action_type: continue 
+
+            # Skip if not successful
+            if counter_action.successful == False: continue
+
+            # Skip if it was a different player
+            if counter_action.player_id != self.player_id: continue
+
+            # Return False if most recent successful counter action was challenged
+            # This means they lost the card, so we should assume they don't have it anymore
+            if check_challenge and ActionType.ChallengeCounterAction in h:
+                return False
+
+            return True
+
+        return False
+
+
+    def has_blocked_steal(self) -> bool:
+        """ Returns whether player has blocked a steal of any type historically """
+        if self.has_blocked(CounterAction.BlockStealingAsCaptain):
+            return True
+        if self.has_blocked(CounterAction.BlockStealingAsAmbassador):
+            return True
+        return False
+
+
+    @property
+    def kill_count(self) -> int:
+        """ Returns the number of times a player has primary killed with assassination or coup """
+        k = 0
+
+        for h in self.game_info.history[:-1]:
+            primary_action = h[ActionType.PrimaryAction]
+
+            if primary_action.successful == False: continue
+            if primary_action.player_id != self.player_id: continue
+
+            if primary_action.action in [PrimaryAction.Coup, PrimaryAction.Assassinate]:
+                k += 1
+
+        return k
+
 
 
 class GameInfo:
@@ -65,6 +124,7 @@ class GameInfo:
                 balance = self.balances[i],
                 card_num = self.players_cards_num[i],
                 is_current = (i==self.player_id),
+                game_info = self,
             )
             self.players.append(p)
 
@@ -126,8 +186,23 @@ class GameInfo:
         return len(self.history)-1
 
     @property
-    def remaining_players(self) -> int:
-        return len([p for p in self.players if not p.is_current and p.alive])
+    def remaining_players(self) -> List[Player]:
+        return [p for p in self.players if not p.is_current and p.alive]
+
+    @property
+    def remaining_players_richest(self) -> List[Player]:
+        """ A list of remaining players ordered richest first """
+        remaining_players = self.remaining_players
+        remaining_players.sort(key=lambda p: p.balance, reverse=True)
+        return remaining_players
+
+    @property
+    def remaining_players_winning(self) -> List[Player]:
+        """ A list of remaining players ordered card num then richest """
+        remaining_players = self.remaining_players
+        remaining_players.sort(key=lambda p: (p.card_num, p.balance), reverse=True)
+        return remaining_players
+
 
     def get_next_alive_player(self) -> Player:
         """ Returns the next alive player clockwise from us """
@@ -136,6 +211,15 @@ class GameInfo:
             next_alive = (next_alive + 1) % 5
 
         return self.players[next_alive]
+
+    def get_prev_alive_player(self) -> Player:
+        """ Returns the previous alive player anticlockwise from us """
+        prev_alive = (self.player_id + 5 - 1) % 5
+        while self.players_cards_num[prev_alive] == 0:
+            prev_alive = (prev_alive + 5 - 1) % 5
+
+        return self.players[prev_alive]
+
 
     def get_richest_player(self) -> Player:
         """ 

@@ -2,7 +2,7 @@
 # A list of bot files in a dependency topological order
 BOT_FILE_NAMES = [
     'base_bot.py',
-    'other_bot.py'
+    'main_bot.py'
 ]
 
 FILE_NAMES = [
