@@ -1,4 +1,3 @@
-from coup.tree.primary_action_node import PrimaryActionNode
 from coup.bots.enums import Character, PrimaryAction
 from coup.bots.game_info import Player
 from coup.common.rules import NUMBER_OF_PLAYERS
@@ -52,9 +51,10 @@ class GameTreeNode:
 
     def generate_children(
         self,
+        *,
         to_depth: int,
         current_depth: int = 0
-    ) -> list['GameTreeNode']:
+    ) -> None:
         """
         Populate the children property of this node. Also populate the children
         of all of its descendants to a depth of to_depth.
@@ -62,8 +62,9 @@ class GameTreeNode:
 
         raise NotImplemented
 
-    def next_player_id(
+    def _next_player_id(
         self,
+        *,
         starting_player_id: int,
         backwards: int = False
     ) -> int:
@@ -87,7 +88,7 @@ class GameTreeNode:
 
         return sum(child.subtree_size() for child in self.children)
 
-    def heuristically_evaluate(self) -> list[float]:
+    def _heuristically_evaluate(self) -> list[float]:
         """
         Return a heuristic score of the state of the game in this node for each
         player.
@@ -107,6 +108,39 @@ class GameTreeNode:
 
     def evaluate(self) -> tuple[list[float], bool]:
         raise NotImplemented
+
+    @staticmethod
+    def _best_child_scores_for_player_id(
+        *,
+        children: list['GameTreeNode'],
+        player_id: int,
+    ) -> tuple[list[float], bool]:
+        """
+        Evaluates the given child nodes, and returns the score most favourable
+        to the player of the given ID. This is essentially the DeciderNode
+        evaluation, but abstracted our so it can also be used by the
+        UsuallyStochasticNode when it isn't being stochastic. It is static so
+        it doesn't need to rely on the specific properties of either subclass.
+        """
+
+        best_for_decider: list[float] = [0] * len(children)
+        was_heuristic = False
+
+        for child in children:
+            child_scores, child_was_heuristic = child.evaluate()
+
+            # If any child was determined heuristically, the whole thing was,
+            # because even if the heuristic value wasn't selected, maybe the
+            # true non-heuristic value would have been.
+            was_heuristic = was_heuristic or child_was_heuristic
+
+            if (
+                child_scores[player_id]
+                > best_for_decider[player_id]
+            ):
+                best_for_decider = child_scores
+
+        return best_for_decider, was_heuristic
 
 
 @dataclass(kw_only=True)
@@ -131,44 +165,47 @@ class DeciderNode(GameTreeNode):
             return self.evaluation
 
         if self.children is None:
-            return self.heuristically_evaluate(), True
+            self.evaluation = self._heuristically_evaluate(), True
+            return self.evaluation
 
-        best_for_decider: list[float] = [0] * len(self.children)
-        was_heuristic = False
-
-        for child in self.children:
-            child_scores, child_was_heuristic = child.evaluate()
-
-            # If any child was determined heuristically, the whole thing was,
-            # because even if the heuristic value wasn't selected, maybe the
-            # true non-heuristic value would have been.
-            was_heuristic = was_heuristic or child_was_heuristic
-
-            if (
-                child_scores[self.deciding_player_id]
-                > best_for_decider[self.deciding_player_id]
-            ):
-                best_for_decider = child_scores
-
-        return best_for_decider, was_heuristic
+        self.evaluation = GameTreeNode._best_child_scores_for_player_id(
+            children=self.children,
+            player_id=self.deciding_player_id,
+        )
+        return self.evaluation
 
 
 @dataclass(kw_only=True)
-class StochasticNode(GameTreeNode):
+class UsuallyStochasticNode(GameTreeNode):
     child_probabilities: Optional[list[Fraction]]
+    perspective_player_deciding: bool
 
     def evaluate(self) -> tuple[list[float], bool]:
         """
         Very much like the evaluation of a DeciderNode, only the score
-        because a weighted sum of all of the child scores, instead of taking
-        the one that is best of the decider, as there is no decider.
+        because a sum of all of the child scores weighted by probabilities,
+        instead of taking the one that is best of the decider, as there is no
+        decider.
+
+        _Unless_ the perspective player is deciding, in which case they pick
+        like a usual decider node.
+
+        Hence the usually.
         """
 
         if self.evaluation is not None and not self.evaluation[1]:
             return self.evaluation
 
         if self.children is None:
-            return self.heuristically_evaluate(), True
+            self.evaluation = self._heuristically_evaluate(), True
+            return self.evaluation
+
+        if self.perspective_player_deciding:
+            self.evaluation = GameTreeNode._best_child_scores_for_player_id(
+                children=self.children,
+                player_id=self.perspective_player_id,
+            )
+            return self.evaluation
 
         if (
             self.child_probabilities is None
@@ -191,7 +228,8 @@ class StochasticNode(GameTreeNode):
             for index, score in enumerate(child_scores):
                 scores[index] += self.child_probabilities[index] * score
 
-        return scores, was_heuristic
+        self.evaluation = scores, was_heuristic
+        return self.evaluation
 
 
 @dataclass(kw_only=True)
@@ -223,7 +261,8 @@ class MultipleDeciderNode(GameTreeNode):
             return self.evaluation
 
         if self.children is None:
-            return self.heuristically_evaluate(), True
+            self.evaluation = self._heuristically_evaluate(), True
+            return self.evaluation
 
         if len(self.children) != self.number_of_remaining_player + 1:
             raise Exception(f'Invalid number of children {len(self.children)}')
@@ -239,7 +278,7 @@ class MultipleDeciderNode(GameTreeNode):
 
         # Iterate through the children in reverse order, updating what would be
         # chosen as we go.
-        deciding_player_id = self.next_player_id(
+        deciding_player_id = self._next_player_id(
             starting_player_id=self.first_deciding_player,
             backwards=True,
         )
@@ -254,87 +293,17 @@ class MultipleDeciderNode(GameTreeNode):
             ):
                 chosen_so_far = child_scores
 
-            deciding_player_id = self.next_player_id(
+            deciding_player_id = self._next_player_id(
                 starting_player_id=deciding_player_id,
                 backwards=True,
             )
 
-        return chosen_so_far, was_heuristic
+        self.evaluation = chosen_so_far, was_heuristic
+        return self.evaluation
 
 
 @dataclass(kw_only=True)
-class NonPrimaryGameTreeNode(GameTreeNode):
+class NonPrimaryNode(GameTreeNode):
     unresolved_primary_action: PrimaryAction
     unresolved_primary_action_target: Optional[int]
     unresolved_primary_action_revealed_card: Optional[Character]
-
-    def make_next_turn_node(self) -> PrimaryActionNode:
-        """
-        Create the PrimaryActionNode with state corresponding to the state of
-        this node with the unresolved primary action resolved.
-        """
-
-        players = [*self.players]
-        perspective_hand = [*self.perspective_hand]
-
-        match self.unresolved_primary_action:
-            case PrimaryAction.Income:
-                players[self.primary_player_id] = Player(
-                    self.primary_player_id,
-                    self.players[self.primary_player_id].balance + 1,
-                    self.players[self.primary_player_id].card_num,
-                    False
-                )
-
-            case PrimaryAction.ForeignAid:
-                players[self.primary_player_id] = Player(
-                    self.primary_player_id,
-                    self.players[self.primary_player_id].balance + 1,
-                    self.players[self.primary_player_id].card_num,
-                    False
-                )
-
-            case PrimaryAction.Coup:
-                if (
-                    self.unresolved_primary_action_target is None
-                    or self.unresolved_primary_action_revealed_card is None
-                ):
-                    raise Exception(
-                        'For a Coup action, the target and revealed card must '
-                        'be set'
-                    )
-                
-                players[self.unresolved_primary_action_target] = Player(
-
-                )
-                
-                
-
-            case PrimaryAction.Tax:
-                pass
-
-            case PrimaryAction.Assassinate:
-                pass
-
-            case PrimaryAction.Exchange:
-                pass
-
-            case PrimaryAction.Steal:
-                pass
-
-            case other:
-                raise ValueError(
-                    'Unknown unresolved primary action '
-                    f'{self.unresolved_primary_action}'
-                )
-
-        next_primary_player = self.next_player_id(self.primary_player_id)
-
-        return PrimaryActionNode(
-            players=players,
-            revealed_cards=self.revealed_cards,
-            primary_player_id=next_primary_player,
-            deciding_player_id=next_primary_player,
-            perspective_player_id=self.perspective_player_id,
-            perspective_hand=perspective_hand
-        )

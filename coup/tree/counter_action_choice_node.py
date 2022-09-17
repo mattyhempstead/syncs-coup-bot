@@ -1,7 +1,7 @@
-from coup.tree.game_tree_node import NonPrimaryGameTreeNode, DeciderNode
+from coup.tree.game_tree_node import NonPrimaryNode, DeciderNode
 
 """END LOCAL IMPORTS"""
 
 
-class CounterActionChoiceNode(NonPrimaryGameTreeNode, DeciderNode):
+class CounterActionChoiceNode(NonPrimaryNode, DeciderNode):
     pass

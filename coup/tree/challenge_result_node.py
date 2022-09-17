@@ -1,7 +1,7 @@
-from coup.tree.game_tree_node import NonPrimaryGameTreeNode, StochasticNode
+from coup.tree.game_tree_node import NonPrimaryNode, UsuallyStochasticNode
 
 """END LOCAL IMPORTS"""
 
 
-class ChallengeResultNode(NonPrimaryGameTreeNode, StochasticNode):
+class ChallengeResultNode(NonPrimaryNode, UsuallyStochasticNode):
     pass
