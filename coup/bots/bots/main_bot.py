@@ -180,7 +180,16 @@ class MainBot(BaseBot):
         if not self.game_info.exists_historical_counter(CounterAction.BlockForeignAid, alive=True):
             return (PrimaryAction.ForeignAid, None)
 
-        # return (PrimaryAction.Tax, None)
+
+        dukes = 0
+        if Character.Duke in self.game_info.revealed_cards:
+            dukes = self.game_info.revealed_cards[Character.Duke]
+
+        # if len(self.game_info.remaining_players) == 2:
+        # if dukes <= 1 and self.game_info.turn > 16:
+        if dukes < 3 and self.game_info.turn > 16:
+            return (PrimaryAction.Tax, None)
+
 
         # If all else fails get $1 from Income by default
         return (PrimaryAction.Income, None)
@@ -246,6 +255,13 @@ class MainBot(BaseBot):
         """
         if self.game_info.is_lying():
             return ChallengeAction.Challenge
+
+        # prev_player = self.game_info.get_prev_alive_player()
+        # if prev_player.balance >= 7:
+        #     h = self.game_info.history[-1]
+        #     if ActionType.CounterAction in h:
+        #         if h[ActionType.PrimaryAction].player_id == self.game_info.current_player.player_id:
+        #             return ChallengeAction.Challenge
 
         return ChallengeAction.NoChallenge
 
@@ -314,14 +330,14 @@ class MainBot(BaseBot):
         if Character.Contessa in self.game_info.own_cards:
             return self.game_info.get_character_location(Character.Contessa)
 
+        if Character.Ambassador in self.game_info.own_cards:
+            return self.game_info.get_character_location(Character.Ambassador)
+
         if Character.Assassin in self.game_info.own_cards:
             return self.game_info.get_character_location(Character.Assassin)
 
         if Character.Duke in self.game_info.own_cards:
             return self.game_info.get_character_location(Character.Duke)
-
-        if Character.Ambassador in self.game_info.own_cards:
-            return self.game_info.get_character_location(Character.Ambassador)
 
         if Character.Captain in self.game_info.own_cards:
             return self.game_info.get_character_location(Character.Captain)

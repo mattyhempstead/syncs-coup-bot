@@ -463,7 +463,7 @@ class Engine:
         # Note that this will make their hand look 1 card smaller than it
         # should be (which may causes the challenged_player to temporarily look
         # eliminated).
-        revealed_card = challenged_player.hand.pop()
+        revealed_card = challenged_player.hand.pop(card_to_reveal)
 
         if action_type == ActionType.ChallengePrimaryAction:
             primary_action = self.history[-1][ActionType.PrimaryAction].action
