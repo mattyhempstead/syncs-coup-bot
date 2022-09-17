@@ -25,16 +25,16 @@ Card revealing:
 - Before a successful primary action there is a PrimaryActionResultNode.
   - For most primary actions this does nothing other than apply the effects of the primary action, and just has a direct child of a primary action node.
   - For primary actions in which a card is lost, this has one child for each card that could be lost.
-  - Same stochastic / decider split depending on whether or not it is the perspective player.
+    - Same stochastic / decider split depending on whether or not it is the perspective player.
 
 - **PrimaryActionNode** (child for each (primary action, target) pair - `4 + (3 * 5) = 19`)
   - ChallengeNode (child for each player other than the primary player, and for no player - `5`)
-    - (Player challenged) ChallengeResultNode (child for each card that could be revealed by whoever looses one - `5`)
+    - (Player challenged) ChallengeResultNode (child for each card that could be revealed by whoever looses one - `2 * 5 = 10`)
       - (Success) **PrimaryActionNode** (primary action challenge succeeded, primary action failed; **repeats**)
       - (Failure) CounterActionPlayerNode (child for each player other than the primary player, and for no player - `5`)
         - (Player countered) CounterActionChoiceNode (child for each possible counter action - `2`)
           - ChallengeNode (child for each player other than the countering player, and for no player - `5`)
-            - (Player challenged) ChallengeResultNode (child for each card that could be revealed by whoever looses one - `5`)
+            - (Player challenged) ChallengeResultNode (child for each card that could be revealed by whoever looses one - `2 * 5 = 10`)
               - (Success) PrimaryActionResultNode (one child for each possible primary action result, most on card reveal - `5`)
                   - **PrimaryActionNode** (counter action challenge succeeded, counter action failed, primary action succeeded; **repeats**)
               - (Failure) **PrimaryActionNode** (counter action challenge failed, counter action succeeded, primary action failed; **repeats**)
@@ -44,7 +44,7 @@ Card revealing:
     - (No player challenged) CounterActionPlayerNode (child for each player other than the primary player, and for no player - `5`)
       - (Player countered) CounterActionChoiceNode (child for each possible counter action - `2`)
         - ChallengeNode (child for each player other than the countering player, and for no player - `5`)
-          - (Player challenged) ChallengeResultNode (child for each card that could be revealed by whoever looses one - `5`)
+          - (Player challenged) ChallengeResultNode (child for each card that could be revealed by whoever looses one - `2 * 5 = 10`)
             - (Success) PrimaryActionResultNode (one child for each possible primary action result, most on card reveal - `5`)
                 **PrimaryActionNode** (counter action challenge succeeded, counter action failed, primary action succeeded; **repeats**)
             - (Failure) **PrimaryActionNode** (counter action challenge failed, counter action succeeded, primary action failed; **repeats**)

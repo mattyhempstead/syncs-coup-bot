@@ -11,17 +11,18 @@ from dataclasses import dataclass
 class GameEndNode(GameTreeNode):
     winning_player_id: int
 
-    def generate_children(
+    def generate_tree(
         self,
         *,
         to_depth: int,
         current_depth: int = 0
     ) -> None:
         """
-        This is a terminal node, there are no child states.
+        This is a terminal node, there are no child states. The tree is already
+        generated.
         """
 
-        self.children = []
+        return
 
     def evaluate(self) -> tuple[list[float], bool]:
         """
