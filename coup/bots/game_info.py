@@ -130,6 +130,7 @@ class GameInfo:
         return len([p for p in self.players if not p.is_current and p.alive])
 
     def get_next_alive_player(self) -> Player:
+        """ Returns the next alive player clockwise from us """
         next_alive = (self.player_id + 1) % 5
         while self.players_cards_num[next_alive] == 0:
             next_alive = (next_alive + 1) % 5
@@ -167,7 +168,7 @@ class GameInfo:
         """
         return self.get_winning_player_order()[0]
 
-    def get_history_primary_action(self):
+    def get_history_primary_action(self) -> Action:
         """ Returns the Action object from history of the PrimaryAction assuming one exists """
         if ActionType.PrimaryAction not in self.history[-1]:
             raise Exception("History contains no PrimaryAction (we must presumably be in a PrimaryMove state?)")

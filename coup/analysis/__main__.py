@@ -11,6 +11,13 @@ from coup.bots.bots.other_bot_2 import OtherBot2
 from coup.bots.bots.primary_action_bot import PrimaryActionBot
 from coup.bots.bots.foreign_aid_bot import ForeignAidBot
 
+from coup.bots.bots.examples.ambassador import ExampleAmbassador
+from coup.bots.bots.examples.assassin import ExampleAssassin
+from coup.bots.bots.examples.challenger import ExampleChallenger
+from coup.bots.bots.examples.counter import ExampleCounter
+from coup.bots.bots.examples.foreign_counter import ExampleForeignCounter
+from coup.bots.bots.examples.simple import ExampleSimple
+from coup.bots.bots.examples.submission_template import ExampleSubmissionTemplate
 
 
 
@@ -102,20 +109,37 @@ if __name__ == "__main__":
     # A collection of bots that are selected from.
     # This should NOT include the bot we are testing if we always want it selected.
     BOT_POOL = [
-        OtherBot.as_name("test1"),
-        OtherBot,
-        OtherBot,
-        OtherBot,
-        OtherBot,
-        OtherBot,
-        OtherBot,
+        # All 7 example bots
+        ExampleAmbassador,
+        ExampleAssassin,
+        ExampleChallenger,
+        ExampleCounter,
+        ExampleForeignCounter,
+        ExampleSimple,
+        ExampleSubmissionTemplate,
+
+        # Current leaderboard has 14 other players (not including us)
+        OtherBot.as_name("OtherBot_0"),
+        OtherBot.as_name("OtherBot_1"),
+        OtherBot.as_name("OtherBot_2"),
+        OtherBot.as_name("OtherBot_3"),
+        OtherBot.as_name("OtherBot_4"),
+        OtherBot.as_name("OtherBot_5"),
+        OtherBot.as_name("OtherBot_6"),
+        OtherBot.as_name("OtherBot_7"),
+        OtherBot.as_name("OtherBot_8"),
+        OtherBot.as_name("OtherBot_9"),
+        OtherBot.as_name("OtherBot_10"),
+        OtherBot.as_name("OtherBot_11"),
+        OtherBot.as_name("OtherBot_12"),
+        OtherBot.as_name("OtherBot_13"),
     ]
 
 
 
     df = test_bots(GAME_COUNT, BOT_MAIN, BOT_POOL)
     # print(df)
-    df.to_csv(str(Path(__file__).parent) + '/results.csv')
+    # df.to_csv(str(Path(__file__).parent) + '/results.csv')
 
     # Dataframe with one row per game 
     df_game = df[["game_num", "turns", "tie"]].drop_duplicates().reset_index(drop=True)
