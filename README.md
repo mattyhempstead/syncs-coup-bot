@@ -2,7 +2,19 @@
 
 Some coup bot thing or something.
 
-## TODO:
+This codebase is a mess, but, well, we didn't have a lot of time to work on it. It's all in a top level folder called `coup` so we could use python module stuff, because python imports are a dark art.
+
+To run our simulator / analysis stuff, run `python -m coup.analysis` from the top level of the repo.
+
+`coup/bots` very helpfully contains another folder called `bots` which contains our bots. Obviously. They inherit from `coup.bots.bots.base_bot` so that they can be run by the engine.
+
+Speaking of which, the engine is in `coup/engine` it is largely a single huge mess of a file.  It almost certainly has logic errors, but, well, it runs.
+
+There's also `coup/tree`, which was a very failed attempt to make a tree search for the game. Several files were left "in progress" when I abandoned it.
+
+The rest of this readme is just what we were writing whilst we were working.
+
+## TODidn't:
 
 - Move common stuff into common (and ensure make submission still works).
 - Fix type errors.
